@@ -1,5 +1,7 @@
+using System;
 using System.Runtime.CompilerServices;
 using Imui.Core;
+using Imui.Rendering;
 using Imui.Style;
 using UnityEngine;
 
@@ -12,6 +14,57 @@ namespace Imui.Controls
         public static void Box(this ImGui gui, ImRect rect, in ImStyleBox style)
         {
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.BorderColor, style.BorderThickness, style.BorderRadius);
+        }
+
+        public static uint DrawTextBox(this ImGui gui, ReadOnlySpan<char> text, in ImStyleBox? style = null, ImTextSettings? textSettings = null, ImRect? rect = null)
+        {
+            textSettings ??= ImText.GetTextSettings(gui, true, ImTextOverflow.Truncate);
+            if (rect == null)
+            {
+                // measure the text
+                var maxWidth = gui.GetLayoutWidth();
+                var measured = gui.MeasureTextSize(text, textSettings.Value, bounds: new Vector2(maxWidth, 0));
+                rect = gui.AddLayoutRect(measured);
+            }
+
+            var id = gui.GetNextControlId();
+            gui.Layout.Push(gui.Layout.Axis, rect.Value);
+            gui.RegisterControl(id, rect.Value);
+            gui.Box(rect.Value, style ?? gui.Style.Window.Box);
+            gui.Text(text, textSettings.Value, rect.Value);
+            gui.Layout.Pop();
+            
+            return id;
+        }
+
+        public static bool DrawLoadingBar(this ImGui gui, float progress, ReadOnlySpan<char> label, Color? low = null, Color? high = null, ImStyleBox? style = null)
+        {
+            style ??= gui.Style.Window.Box;
+            progress = progress < 0f ? 0f : progress > 1f ? 1f : progress;
+            var bgStyle = style.Value;
+            var fgStyle = bgStyle;
+            var rect = gui.AddSingleRowRect(new ImSize(0, 0, ImSizeMode.Fill));
+            var progressRect = rect;
+            progressRect.W *= progress;
+                            
+            fgStyle.BackColor = Color.Lerp(low ?? Color.red, high ?? Color.green, MathF.Sqrt(progress));
+            gui.Box(rect, bgStyle);
+            gui.Box(progressRect, fgStyle);
+            gui.Text(label, rect);
+
+            return progress >= 1f;
+        }
+        
+        public static bool IsHovered(this ImGui gui, ImRect rect)
+        {
+            ref readonly var meshProperties = ref gui.Canvas.GetActiveSettings();
+            
+            if (meshProperties.ClipRect.Enabled && !meshProperties.ClipRect.Rect.Contains(gui.Input.MousePosition))
+            {
+                return false;
+            }
+
+            return meshProperties.Order >= gui.nextFrameData.HoveredControl.Order && rect.Contains(gui.Input.MousePosition);
         }
 
         public static Vector2Int AsInt(this Vector2 vec2)

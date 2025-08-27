@@ -16,7 +16,14 @@ namespace Imui.Controls
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.BorderColor, style.BorderThickness, style.BorderRadius);
         }
 
-        public static uint TextBox(this ImGui gui, ReadOnlySpan<char> text, in ImStyleBox? style = null, ImTextSettings? textSettings = null, ImRect? rect = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Box(this ImGui gui, ImRect rect)
+        {
+            ref readonly var style = ref gui.Style.Window.Box;
+            gui.Canvas.RectWithOutline(rect, style.BackColor, style.FrontColor, style.BorderThickness, style.BorderRadius);
+        }
+
+        public static uint TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null)
         {
             if (textSettings == null)
             {
@@ -45,27 +52,31 @@ namespace Imui.Controls
             var id = gui.GetNextControlId();
             gui.Layout.Push(gui.Layout.Axis, rect.Value);
             gui.RegisterControl(id, rect.Value);
-            gui.Box(rect.Value, style ?? gui.Style.Window.Box);
+            gui.Box(rect.Value, gui.Style.Window.Box);
             gui.Text(text, textSettings.Value, rect.Value);
             gui.Layout.Pop();
             
             return id;
         }
 
-        public static bool LoadingBar(this ImGui gui, float progress, ReadOnlySpan<char> label, Color? low = null, Color? high = null, ImStyleBox? style = null)
+        public static bool LoadingBar(this ImGui gui, float progress, ReadOnlySpan<char> label, Color? low = null, Color? high = null, ImStyleBox? style = null, float maxWidth = float.MaxValue, ImRect? rect = null)
         {
             style ??= gui.Style.Window.Box;
             progress = progress < 0f ? 0f : progress > 1f ? 1f : progress;
             var bgStyle = style.Value;
             var fgStyle = bgStyle;
-            var rect = gui.AddSingleRowRect(new ImSize(0, 0, ImSizeMode.Fill));
-            var progressRect = rect;
+            rect ??= gui.Layout.AddRect(MathF.Min(gui.Layout.GetAvailableWidth(), maxWidth), gui.GetRowHeight() + gui.Style.Layout.InnerSpacing * 2);//new ImSize(maxWidth, 0, ImSizeMode.Fill)));
+            var progressRect = rect.Value;
             progressRect.W *= progress;
                             
-            fgStyle.BackColor = Color.Lerp(low ?? Color.red, high ?? Color.green, MathF.Sqrt(progress));
-            gui.Box(rect, bgStyle);
+            fgStyle.BackColor = Color.Lerp(low ?? Color.red, high ?? Color.green, progress);
+            gui.RegisterControl(gui.GetNextControlId(), rect.Value);
+            gui.Box(rect.Value, bgStyle);
             gui.Box(progressRect, fgStyle);
-            gui.Text(label, rect);
+            
+            var textSettings = ImText.GetTextSettings(gui, false, ImTextOverflow.Ellipsis);
+            textSettings.Align = new ImAlignment(0.5f, 0.5f);
+            gui.Text(text: label, settings: textSettings, rect: rect.Value);
 
             return progress >= 1f;
         }

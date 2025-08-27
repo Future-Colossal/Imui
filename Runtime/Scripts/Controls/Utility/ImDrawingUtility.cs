@@ -16,15 +16,30 @@ namespace Imui.Controls
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.BorderColor, style.BorderThickness, style.BorderRadius);
         }
 
-        public static uint DrawTextBox(this ImGui gui, ReadOnlySpan<char> text, in ImStyleBox? style = null, ImTextSettings? textSettings = null, ImRect? rect = null)
+        public static uint TextBox(this ImGui gui, ReadOnlySpan<char> text, in ImStyleBox? style = null, ImTextSettings? textSettings = null, ImRect? rect = null)
         {
-            textSettings ??= ImText.GetTextSettings(gui, true, ImTextOverflow.Truncate);
+            if (textSettings == null)
+            {
+                var settings = ImText.GetTextSettings(gui, true, ImTextOverflow.Truncate);
+                settings.Align = new ImAlignment(0.5f, 0.5f);
+                textSettings = settings;
+            }
+            
             if (rect == null)
             {
                 // measure the text
-                var maxWidth = gui.GetLayoutWidth();
-                var measured = gui.MeasureTextSize(text, textSettings.Value, bounds: new Vector2(maxWidth, 0));
-                rect = gui.AddLayoutRect(measured);
+                var maxWidth = gui.Layout.GetAvailableWidth();
+                var availableHeight = gui.Layout.GetAvailableHeight();
+                var maxHeight = availableHeight;
+
+                var extraSpacing= gui.Style.Layout.InnerSpacing * 2; 
+                if (maxHeight < gui.GetTextLineHeight() + extraSpacing)
+                {
+                    maxHeight = 0;
+                }
+                
+                var measured = gui.MeasureTextSize(text, textSettings.Value, bounds: new Vector2(maxWidth, maxHeight));
+                rect = gui.AddLayoutRectWithSpacing(new Vector2(measured.x + extraSpacing, measured.y + extraSpacing));
             }
 
             var id = gui.GetNextControlId();
@@ -37,7 +52,7 @@ namespace Imui.Controls
             return id;
         }
 
-        public static bool DrawLoadingBar(this ImGui gui, float progress, ReadOnlySpan<char> label, Color? low = null, Color? high = null, ImStyleBox? style = null)
+        public static bool LoadingBar(this ImGui gui, float progress, ReadOnlySpan<char> label, Color? low = null, Color? high = null, ImStyleBox? style = null)
         {
             style ??= gui.Style.Window.Box;
             progress = progress < 0f ? 0f : progress > 1f ? 1f : progress;

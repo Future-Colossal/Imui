@@ -23,7 +23,7 @@ namespace Imui.Controls
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.FrontColor, style.BorderThickness, style.BorderRadius);
         }
 
-        public static uint TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null)
+        public static uint TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null, bool pushLayout = true)
         {
             if (textSettings == null)
             {
@@ -50,11 +50,18 @@ namespace Imui.Controls
             }
 
             var id = gui.GetNextControlId();
-            gui.Layout.Push(gui.Layout.Axis, rect.Value);
+            if (pushLayout)
+            {
+                gui.Layout.Push(gui.Layout.Axis, rect.Value);
+            }
             gui.RegisterControl(id, rect.Value);
             gui.Box(rect.Value, gui.Style.Window.Box);
             gui.Text(text, textSettings.Value, rect.Value);
-            gui.Layout.Pop();
+
+            if (pushLayout)
+            {
+                gui.Layout.Pop();
+            }
             
             return id;
         }

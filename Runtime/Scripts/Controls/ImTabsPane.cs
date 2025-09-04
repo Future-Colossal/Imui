@@ -6,10 +6,18 @@ using UnityEngine;
 
 namespace Imui.Controls
 {
+    [Flags]
+    public enum ImTabsPaneFlags
+    {
+        None = 0,
+        NonScrollableContent = 1 << 0
+    }
+    
     public struct ImTabsPaneState
     {
         public ImRect Content;
         public uint Selected;
+        public ImTabsPaneFlags Flags;
     }
 
     public static unsafe class ImTabsPane
@@ -26,11 +34,13 @@ namespace Imui.Controls
             return gui.AddLayoutRect(width + gui.Style.Layout.Indent * 2, GetTabBarHeight(gui));
         }
 
-        public static void BeginTabsPane(this ImGui gui, ImRect rect)
+        public static void BeginTabsPane(this ImGui gui, ImRect rect, ImTabsPaneFlags flags = ImTabsPaneFlags.None)
         {
             var id = gui.GetNextControlId();
             var state = gui.BeginScopeUnsafe<ImTabsPaneState>(id);
             var buttonsRect = rect.TakeTop(GetTabBarHeight(gui), out state->Content);
+
+            state->Flags = flags;
 
             gui.Layout.Push(ImAxis.Horizontal, buttonsRect);
             gui.BeginScrollable();
@@ -70,8 +80,14 @@ namespace Imui.Controls
 
             gui.PushId(id);
             gui.Layout.Push(ImAxis.Vertical, state->Content.WithPadding(gui.Style.Layout.Spacing));
-            gui.BeginScrollable();
 
+            if ((state->Flags & ImTabsPaneFlags.NonScrollableContent) == 0)
+            {
+                gui.PushId(id);
+                gui.BeginScrollable();
+                gui.PopId();
+            }
+            
             var maskRect = state->Content.WithPadding(gui.Style.Tabs.ContainerBox.BorderThickness);
             gui.Canvas.PushRectMask(maskRect, gui.Style.Tabs.ContainerBox.BorderRadius);
             gui.Canvas.PushClipRect(maskRect);
@@ -81,6 +97,8 @@ namespace Imui.Controls
 
         public static void EndTab(this ImGui gui)
         {
+            var state = gui.GetCurrentScopeUnsafe<ImTabsPaneState>();
+
             gui.Canvas.PopClipRect();
             gui.Canvas.PopRectMask();
 
@@ -89,8 +107,12 @@ namespace Imui.Controls
             // var state = gui.PeekControlScopePtr<ImTabsPaneState>();
             //
             // state->Content = rect;
+            
+            if ((state->Flags & ImTabsPaneFlags.NonScrollableContent) == 0)
+            {
+                gui.EndScrollable();
+            }
 
-            gui.EndScrollable();
             gui.Layout.Pop();
             gui.PopId();
         }

@@ -14,11 +14,11 @@ namespace Imui.IO.Utility
 
         private bool disposed;
 
-        public Vector2Int SetupRenderTarget(CommandBuffer cmd, Vector2Int requestedSize, out bool textureChanged)
+        public Vector2Int SetupRenderTarget(CommandBuffer cmd, Vector2Int requestedSize, bool needsDepth, out bool textureChanged)
         {
             AssertDisposed();
 
-            textureChanged = SetupTexture(requestedSize, 1.0f, out var targetSize);
+            textureChanged = SetupTexture(requestedSize, 1.0f, needsDepth, out var targetSize);
 
             cmd.Clear();
             cmd.SetRenderTarget(Texture);
@@ -27,7 +27,7 @@ namespace Imui.IO.Utility
             return targetSize;
         }
 
-        private bool SetupTexture(Vector2Int size, float scale, out Vector2Int targetSize)
+        private bool SetupTexture(Vector2Int size, float scale, bool needsDepth, out Vector2Int targetSize)
         {
             AssertDisposed();
 
@@ -41,15 +41,20 @@ namespace Imui.IO.Utility
                 return false;
             }
 
-            if (Texture != null && Texture.IsCreated() && Texture.width == w && Texture.height == h)
+            if (Texture && Texture.IsCreated() && Texture.width == w && Texture.height == h && (!needsDepth || Texture.depth > 0))
             {
                 return false;
             }
 
             ReleaseTexture();
 
-            Texture = new RenderTexture(w, h, GraphicsFormat.R8G8B8A8_UNorm, GraphicsFormat.None);
-            Texture.name = "ImuiRenderBuffer";
+            var depth = needsDepth ? 16 : 0;
+            var desc = new RenderTextureDescriptor(w, h, RenderTextureFormat.ARGB32, depth, 0, RenderTextureReadWrite.Linear);
+            
+            Texture = new RenderTexture(desc)
+            {
+                name = "ImuiRenderBuffer"
+            };
 
             return Texture.Create();
         }

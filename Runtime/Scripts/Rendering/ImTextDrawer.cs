@@ -220,12 +220,13 @@ namespace Imui.Rendering
                 return;
             }
 
-            ReflectionUtility.RemoveFontAsset(fontAsset);
+            ReflectionUtility.UpdateAtlasTexturesInQueue(); // (artem-s): clears up static atlas update queue
+            ReflectionUtility.RemoveFontAsset(fontAsset); // (artem-s): removes this font asset from lookup cache
             
             ImUnityUtility.Destroy(fontAsset);
             fontAsset = null;
             
-            ReflectionUtility.RebuildFontAssetCache();
+            ReflectionUtility.RebuildFontAssetCache(); // (artem-s): rebuilds lookup cache after font asset destroyed, JUST IN CASE
         }
 
         public void ApplyAtlasChanges(bool force = false) {

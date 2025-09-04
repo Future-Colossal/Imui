@@ -1,3 +1,4 @@
+using System;
 using Imui.Controls;
 using Imui.Core;
 using Imui.Examples;
@@ -15,9 +16,14 @@ namespace Imui.Demo
         private ImGui gui;
         private bool demoOpen = true;
 
-        private void Awake()
+        private void OnEnable()
         {
             gui = new ImGui(backend, backend);
+        }
+
+        private void OnDisable()
+        {
+            gui?.Dispose();
         }
 
         private void Update()
@@ -28,13 +34,9 @@ namespace Imui.Demo
             ImDemoWindow.Draw(gui, ref demoOpen);
             
             gui.EndFrame();
-        }
-        
-        private void OnRenderObject()
-        {
             gui.Render();
         }
-
+        
         private void DrawRootMenu()
         {
             gui.BeginMenuBar();

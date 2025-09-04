@@ -84,7 +84,7 @@ namespace Imui.Rendering
             screenSize /= screenScale;
 
             var view = Matrix4x4.identity;
-            var proj = Matrix4x4.Ortho(0, screenSize.x, 0, screenSize.y, short.MinValue, short.MaxValue);
+            var proj = Matrix4x4.Ortho(0, screenSize.x, 0, screenSize.y, short.MinValue - 1, short.MaxValue + 1);
             var gpuProj = GL.GetGPUProjectionMatrix(proj, true);
 
             cmd.SetGlobalMatrix(ViewProjectionId, view * gpuProj);

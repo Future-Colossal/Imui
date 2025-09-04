@@ -519,7 +519,7 @@ namespace Imui.Core
             {
                 Id = id,
                 Type = typeof(TState).GetHashCode(),
-                Ptr = ptr
+                Ptr = ptr,
 #if IMUI_DEBUG
                 Descriptor = typeof(TState).FullName,
 #endif
@@ -644,16 +644,21 @@ namespace Imui.Core
 
         public void Render()
         {
+            Renderer.Schedule(Render);
+        }
+        
+        private void Render(IImuiRenderingContext context)
+        {
             ImProfiler.BeginSample("ImGui.Render");
 
             nextFrameData.VerticesCount = MeshDrawer.buffer.VerticesCount;
             nextFrameData.IndicesCount = MeshDrawer.buffer.IndicesCount;
             nextFrameData.ArenaSize = Arena.Size;
 
-            var renderCmd = Renderer.CreateCommandBuffer();
+            var renderCmd = context.CreateCommandBuffer();
             var screenSize = Renderer.GetScreenSize();
             var uiScale = Renderer.GetScale();
-            var targetSize = Renderer.SetupRenderTarget(renderCmd);
+            var targetSize = Renderer.SetupRenderTarget(renderCmd, Canvas.NeedsDepth);
 
             if (RenderMode is ImGuiRenderMode.Shaded or ImGuiRenderMode.ShadedWireframe)
             {
@@ -665,8 +670,8 @@ namespace Imui.Core
                 MeshRenderer.RenderWireframe(renderCmd, MeshBuffer, screenSize, uiScale);
             }
 
-            Renderer.Execute(renderCmd);
-            Renderer.ReleaseCommandBuffer(renderCmd);
+            context.ExecuteCommandBuffer(renderCmd);
+            context.ReleaseCommandBuffer(renderCmd);
 
             ImProfiler.EndSample();
         }

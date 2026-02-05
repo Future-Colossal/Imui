@@ -23,38 +23,30 @@ namespace Imui.Controls
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.FrontColor, style.BorderThickness, style.BorderRadius);
         }
 
-        public static void TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null, bool pushLayout = true, float inset = 0f, bool centerHorizontally = false)
+        public static void TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null, bool pushLayout = true, bool centerHorizontally = false)
         {
             textSettings ??= GetDefaultCenteredTextSettings(gui);
-            var thisRect = rect ?? GetTextRectFromLayout(gui, text, textSettings, inset);
+            var textRect = rect ?? GetTextRectFromLayout(gui, text, textSettings);
 
             if (centerHorizontally)
             {
                 var availableWidth = gui.Layout.GetAvailableWidth();
-                var remainingWidth = availableWidth - thisRect.W;
+                var remainingWidth = availableWidth - textRect.W;
                 if (remainingWidth > 0)
                 {
-                    thisRect.X += remainingWidth * 0.5f;
+                    textRect.X += remainingWidth * 0.5f;
                 }
             }
 
             var id = gui.GetNextControlId();
-            
+            gui.RegisterControl(id, textRect);
+            gui.Box(textRect, gui.Style.TextEdit.Normal.Box);
+
+            gui.Text(text, textSettings.Value, textRect);
             if (pushLayout)
             {
-                gui.Layout.AddRect(thisRect);
+                gui.Layout.AddRect(textRect);
             }
-            
-            gui.RegisterControl(id, thisRect);
-            gui.Box(thisRect, gui.Style.Window.Box);
-
-            var textRect = thisRect;
-            textRect.X += inset;
-            textRect.Y += inset;
-            var doubleInset = inset * 2;
-            textRect.W -= doubleInset;
-            textRect.H -= doubleInset;
-            gui.Text(text, textSettings.Value, textRect);
         }
 
         private static ImTextSettings GetDefaultCenteredTextSettings(ImGui gui)
@@ -64,17 +56,16 @@ namespace Imui.Controls
             return settings;
         }
 
-        public static ImRect GetTextRectFromLayout(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, float inset = 0f)
+        public static ImRect GetTextRectFromLayout(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null)
         {
             // measure the text
-            var spacing = gui.Style.Layout.InnerSpacing + inset;
-            var totalSpacing = spacing * 2;
-            var availableWidth = gui.Layout.GetAvailableWidth();
-            var availableHeight = gui.Layout.GetAvailableHeight();
-            var maxWidth = availableWidth - totalSpacing;
-            var maxHeight = availableHeight - totalSpacing;
+            var availableSize = gui.Layout.GetAvailableSize();
+            var textSpacing = gui.Style.Layout.InnerSpacing;
+            var maxWidth = availableSize.x - textSpacing - textSpacing;
+            var maxHeight = availableSize.y - textSpacing - textSpacing;
 
-            if (maxHeight < gui.GetTextLineHeight())
+            var textLineHeight = gui.GetTextLineHeight();
+            if (maxHeight < textLineHeight)
             {
                 maxHeight = 0;
             }
@@ -82,9 +73,9 @@ namespace Imui.Controls
             textSettings ??= GetDefaultCenteredTextSettings(gui);
             var measured = gui.MeasureTextSize(text, textSettings.Value, bounds: new Vector2(maxWidth, maxHeight));
             
-            var size = new Vector2(measured.x + totalSpacing, measured.y + totalSpacing);
-            
+            var size = new Vector2(measured.x + textSpacing, measured.y + textSpacing);
             var bottomLeft = gui.Layout.GetContentRect().BottomLeft;
+
             var rect = new ImRect(new(bottomLeft.x, bottomLeft.y - size.y), size);
             return rect;
         }

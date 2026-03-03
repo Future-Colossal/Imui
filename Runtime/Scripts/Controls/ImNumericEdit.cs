@@ -235,7 +235,7 @@ namespace Imui.Controls
                 {
                     var sliderMin = filter.AsDouble(min);
                     var sliderMax = filter.AsDouble(max);
-                    var sliderDelta = NumericSlider(gui, id, sliderId, sliderMin, sliderMax, step, rect);
+                    var sliderDelta = NumericSlider(gui, id, sliderId, filter.AsDouble(value), sliderMin, sliderMax, step, rect);
 
                     if (filter.IsInteger)
                     {
@@ -291,6 +291,21 @@ namespace Imui.Controls
                     bottom: halfVertPadding);
 
                 gui.Canvas.RectWithOutline(rect, style.BackColor, style.BorderColor, style.BorderThickness, radius);
+                
+                // Begin: draw slider fill
+                var fillColor = gui.Style.Slider.Fill.BackColor;
+                fillColor = Color32.Lerp(fillColor, new Color32(fillColor.r, fillColor.g, fillColor.b, 0), 0.5f);
+                var minDbl = filter.AsDouble(min);
+                var range = filter.AsDouble(max) - minDbl;
+                if (double.IsFinite(range) && Math.Abs(range) is > float.Epsilon and < int.MaxValue)
+                {
+                    var normValue = Math.Clamp((filter.AsDouble(value) - minDbl) / range, 0, 1);
+                    gui.Canvas.RectWithOutline(rect.TakeLeft((float)(normValue * rect.W)), fillColor, style.BorderColor,
+                        style.BorderThickness, radius);
+                }
+                // End: draw slider fill
+
+                // draw numeric value text
                 gui.Canvas.Text(buffer, style.FrontColor, textRect, gui.Style.Layout.TextSize, alignX: align.X, alignY: align.Y, false,
                     ImTextOverflow.Ellipsis);
 
@@ -326,7 +341,7 @@ namespace Imui.Controls
 
             return changed;
         }
-
+        
         private static int PlusMinusButtons(ImGui gui, ref ImRect rect)
         {
             var border = -gui.Style.Button.BorderThickness;
@@ -358,44 +373,81 @@ namespace Imui.Controls
             return delta;
         }
 
-        private static void HandleDrag(in ImMouseEvent evt, ref double delta, double step, double min, double max, in ImRect rect)
+        private static void HandleDrag(in ImMouseEvent evt, in Vector2 pos, double value, out double delta, double step, double min, double max, in ImRect rect)
         {
-            if (evt.Delta.x == 0)
+            var mouseDeltaX = evt.Delta.x;
+            if (mouseDeltaX == 0)
             {
+                delta = 0;
                 return;
             }
+
+            var range = max - min;
             
-            delta = step == 0 ? Math.Min(max - min, rect.W) * evt.Delta.x / rect.W : step * Math.Sign(evt.Delta.x);
+            var shiftIsHeld = (evt.Modifiers & EventModifiers.Shift) == EventModifiers.Shift;
+            var ctrlIsHeld = (evt.Modifiers & EventModifiers.Control) == EventModifiers.Control;
+            
+            if(!double.IsFinite(range) || shiftIsHeld || ctrlIsHeld)
+            {
+                const float epsilon = 1e-14f;
+                if (Math.Abs(step) < epsilon)
+                {
+                    delta = Math.Min(max - min, rect.W) * mouseDeltaX / rect.W;
+                }
+                else
+                {
+                    if(ctrlIsHeld)
+                    {
+                        // fine adjustment
+                        const float fineAdjustmentFactor = 1/8f;
+                        step *= fineAdjustmentFactor;
+                    }
+                    
+                    delta = step * Math.Sign(mouseDeltaX);
+                }
+            }
+            else
+            {
+                var normalizedMousePos = Math.Clamp((pos.x - rect.X) / rect.W, 0, 1);
+                var previousValueNormalized = (value - min) / range;
+                delta = (normalizedMousePos - previousValueNormalized) * range;
+            }
         }
         
-        public static double NumericSlider(ImGui gui, uint hoverId, uint id, double min, double max, double step, ImRect rect)
+        public static double NumericSlider(ImGui gui, uint hoverId, uint id, double value, double min, double max, double step, ImRect rect)
         {
             var hovered = gui.IsControlHovered(hoverId);
             var active = gui.IsControlActive(id);
-            var delta = 0.0d;
 
             gui.RegisterControl(id, rect);
 
             ref readonly var evt = ref gui.Input.MouseEvent;
+            var mousePos = gui.Input.MousePosition;
             switch (evt.Type)
             {
                 case ImMouseEventType.Down or ImMouseEventType.BeginDrag when evt.LeftButton && hovered:
+                {
                     gui.SetActiveControl(id, ImControlFlag.Draggable);
-                    HandleDrag(in evt, ref delta, step, min, max, in rect);
+                    HandleDrag(in evt, mousePos, value, out var delta, step, min, max, in rect);
                     gui.Input.UseMouseEvent();
-                    break;
+                    return delta;
+                }
 
                 case ImMouseEventType.Drag when active:
-                    HandleDrag(in evt, ref delta, step, min, max, in rect);
+                {
+                    HandleDrag(in evt, mousePos, value, out var delta, step, min, max, in rect);
                     gui.Input.UseMouseEvent();
-                    break;
+                    return delta;
+                }
 
                 case ImMouseEventType.Up when active:
+                {
                     gui.ResetActiveControl();
                     break;
+                }
             }
 
-            return delta;
+            return 0;
         }
 
         public abstract class NumericFilter<T>: ImTextEditFilter

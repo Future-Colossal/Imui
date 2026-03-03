@@ -127,22 +127,7 @@ namespace Imui.Controls
             ref readonly var style = ref (active ? ref gui.Style.Slider.Selected : ref gui.Style.Slider.Normal);
             gui.Box(barRect, in style);
             
-            if ((flags & ImSliderFlag.NoFill) == 0)
-            {
-                var fillRect = barRect;
-
-                if ((flags & ImSliderFlag.FillRightSegment) != 0)
-                {
-                    fillRect.X += barRect.W * normValue;
-                    fillRect.W *= 1.0f - normValue;
-                }
-                else
-                {
-                    fillRect.W *= normValue;
-                }
-
-                gui.Box(fillRect, gui.Style.Slider.Fill);
-            }
+            RenderSliderFill(gui, flags, barRect, normValue);
 
             var handleBounds = rect;
 
@@ -223,7 +208,25 @@ namespace Imui.Controls
 
             return true;
         }
-        
+
+        public static void RenderSliderFill(this ImGui gui, ImSliderFlag flags, ImRect barRect, float normValue)
+        {
+            if ((flags & ImSliderFlag.NoFill) != 0) return;
+            
+
+            if ((flags & ImSliderFlag.FillRightSegment) != 0)
+            {
+                barRect.X += barRect.W * normValue;
+                barRect.W *= 1.0f - normValue;
+            }
+            else
+            {
+                barRect.W *= normValue;
+            }
+
+            gui.Box(barRect, gui.Style.Slider.Fill);
+        }
+
         private static bool IsScrollingHorizontally(in ImMouseEvent e)
         {
             return e.Device == ImMouseDevice.Mouse || Mathf.Abs(e.Delta.x) > Mathf.Abs(e.Delta.y);

@@ -1,5 +1,6 @@
 using System;
 using Imui.Core;
+using Imui.Style;
 using UnityEngine;
 
 namespace Imui.Controls
@@ -31,35 +32,42 @@ namespace Imui.Controls
                 return;
             }
 
-            Tooltip(gui, text, gui.Input.MousePosition + gui.Style.Tooltip.OffsetPixels / gui.Canvas.ScreenScale);
+            Tooltip(gui, text, gui.Input.MousePosition, gui.Style.Tooltip.OffsetPixels / gui.Canvas.ScreenScale);
         }
 
-        public static void Tooltip(this ImGui gui, ReadOnlySpan<char> text, Vector2 position)
+        public static void Tooltip(this ImGui gui, ReadOnlySpan<char> text, Vector2 position, Vector2 offset = default)
         {
             var textSettings = GetTextSettings(gui);
-            var textSize = gui.MeasureTextSize(text, textSettings);
-            var width = textSize.x + gui.Style.Tooltip.Padding.Horizontal;
-            var height = textSize.y + gui.Style.Tooltip.Padding.Vertical;
-            var rect = new ImRect(position.x, gui.Style.Tooltip.AboveCursor ? position.y : position.y - height, width, height);
-            
-            // fit rect to screen
-            var bounds = gui.Canvas.ScreenRect;
-            var right = bounds.Right;
-            var bottom = bounds.Bottom;
-            var top = bounds.Top;
-            var left = bounds.Left;
-            
-            if (rect.X < left)
-                rect.X = left;
-            else if(rect.Right > right)
-                rect.X -= rect.Right - right;
-            
-            if (rect.Top > top)
-                rect.Y -= rect.Top - top;
-            else if (rect.Bottom < bottom)
-                rect.Y -= rect.Bottom - bottom;
+            var safeRect = gui.Canvas.SafeScreenRect;
 
-            Tooltip(gui, text, rect);
+            ref var verticalOffset = ref offset.y;
+            if (verticalOffset != 0)
+            {
+                if (gui.Style.Tooltip.AboveCursor ||
+                    float.IsNegative(verticalOffset) 
+                        ? position.y + verticalOffset < safeRect.Bottom
+                        : position.y + verticalOffset > safeRect.Top)
+                {
+                    offset.y = -offset.y;
+                }
+            }
+
+            position += offset;
+            position.x = Math.Clamp(position.x, safeRect.Left, safeRect.Right);
+            position.y = Math.Clamp(position.y, safeRect.Bottom, safeRect.Top);
+
+            var bounds = gui.Canvas.SafeScreenRect.TakeRight(position.x).TakeBottom(position.y);
+            var textSize = gui.MeasureTextSize(text, textSettings, bounds.Size);
+            ref readonly var padding = ref gui.Style.Tooltip.Padding;
+            var width = textSize.x + padding.Horizontal;
+            var height = textSize.y + padding.Vertical;
+            
+            var widthDelta = bounds.Right - (width + position.x);
+            var heightDelta = bounds.Top - (height + position.y);
+            position.x += Math.Min(widthDelta, 0);
+            position.y += Math.Min(heightDelta, 0);
+
+            Tooltip(gui, text, new ImRect(position.x, position.y,width, height));
         }
 
         public static void Tooltip(this ImGui gui, ReadOnlySpan<char> text, ImRect rect)

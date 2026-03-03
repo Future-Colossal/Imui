@@ -392,10 +392,29 @@ namespace Imui.IO.UGUI
 #endif
 
             var result = EventModifiers.None;
-
+            if (!Input.anyKey)
+            {
+                return result;
+            }
+            
             if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
             {
                 result |= EventModifiers.Control;
+            }
+
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                result |= EventModifiers.Shift;
+            }
+
+            if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
+            {
+                result |= EventModifiers.Alt;
+            }
+
+            if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand))
+            {
+                result |= EventModifiers.Command;
             }
 
             return result;

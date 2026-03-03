@@ -214,9 +214,16 @@ namespace Imui.Controls
             var hovered = gui.IsControlHovered(id);
             var active = gui.IsControlActive(id);
             var useSlider = (flags & ImNumericEditFlag.Slider) != 0;
-            var usePlusMinusButtons = !useSlider && (flags & ImNumericEditFlag.PlusMinus) != 0;
+            var usePlusMinusButtons = (flags & ImNumericEditFlag.PlusMinus) != 0;
 
             ref readonly var evt = ref gui.Input.MouseEvent;
+            
+            if (usePlusMinusButtons)
+            {
+                gui.PushId(id);
+                delta = PlusMinusButtons(gui, ref rect) * step;
+                gui.PopId();
+            }
 
             if (!active && useSlider)
             {
@@ -238,13 +245,6 @@ namespace Imui.Controls
                     delta += sliderDelta;
                 }
 
-                gui.PopId();
-            }
-
-            if (usePlusMinusButtons)
-            {
-                gui.PushId(id);
-                delta = PlusMinusButtons(gui, ref rect) * step;
                 gui.PopId();
             }
 
@@ -329,23 +329,31 @@ namespace Imui.Controls
 
         private static int PlusMinusButtons(ImGui gui, ref ImRect rect)
         {
-            var border = gui.Style.Button.BorderThickness;
+            var border = -gui.Style.Button.BorderThickness;
             var height = rect.H;
             var width = height;
+            var plusBtnRect = rect.TakeRight(width, border, out rect);
+            var minusBtnRect = rect.TakeRight(width, border, out rect);
 
-            var plusBtnRect = rect.TakeRight(width, -border, out rect);
-            var minusBtnRect = rect.TakeRight(width, -border, out rect);
+            var groupId = gui.GetNextControlId();
+            gui.PushId(groupId);
+            var wholeRect = plusBtnRect;
+            wholeRect.Encapsulate(minusBtnRect);
+            gui.RegisterGroup(groupId, wholeRect);
+            var hovered = gui.IsGroupHovered(groupId);
+
             var delta = 0;
-
-            if (gui.Button("-", minusBtnRect, flags: ImButtonFlag.ReactToHeldDown, ImAdjacency.Middle))
+            if (gui.Button("-", minusBtnRect, flags: ImButtonFlag.ReactToHeldDown, ImAdjacency.Middle) && hovered)
             {
                 delta--;
             }
 
-            if (gui.Button("+", plusBtnRect, flags: ImButtonFlag.ReactToHeldDown, ImAdjacency.Right))
+            if (gui.Button("+", plusBtnRect, flags: ImButtonFlag.ReactToHeldDown, ImAdjacency.Right) && hovered)
             {
                 delta++;
             }
+            
+            gui.PopId();
 
             return delta;
         }
@@ -360,9 +368,9 @@ namespace Imui.Controls
             delta = step == 0 ? Math.Min(max - min, rect.W) * evt.Delta.x / rect.W : step * Math.Sign(evt.Delta.x);
         }
         
-        public static double NumericSlider(ImGui gui, uint hoveredId, uint id, double min, double max, double step, ImRect rect)
+        public static double NumericSlider(ImGui gui, uint hoverId, uint id, double min, double max, double step, ImRect rect)
         {
-            var hovered = gui.IsControlHovered(hoveredId);
+            var hovered = gui.IsControlHovered(hoverId);
             var active = gui.IsControlActive(id);
             var delta = 0.0d;
 

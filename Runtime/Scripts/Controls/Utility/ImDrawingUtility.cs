@@ -23,10 +23,23 @@ namespace Imui.Controls
             gui.Canvas.RectWithOutline(rect, style.BackColor, style.FrontColor, style.BorderThickness, style.BorderRadius);
         }
 
-        public static void TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null, bool pushLayout = true, bool centerHorizontally = false)
+        public static void TextBox(this ImGui gui, ReadOnlySpan<char> text, ImTextSettings? textSettings = null, ImRect? rect = null, bool centerHorizontally = false, bool forcePushLayout = false)
         {
-            textSettings ??= GetDefaultCenteredTextSettings(gui);
-            var textRect = rect ?? GetTextRectFromLayout(gui, text, textSettings);
+            textSettings ??= gui.GetDefaultCenteredTextSettings();
+
+            ImRect textRect;
+            bool pushLayout;
+
+            if (rect is null)
+            {
+                textRect = gui.GetTextRectFromLayout(text, textSettings);
+                pushLayout = true;
+            }
+            else
+            {
+                textRect = rect.Value;
+                pushLayout = forcePushLayout;
+            }
 
             if (centerHorizontally)
             {
@@ -49,7 +62,7 @@ namespace Imui.Controls
             }
         }
 
-        private static ImTextSettings GetDefaultCenteredTextSettings(ImGui gui)
+        private static ImTextSettings GetDefaultCenteredTextSettings(this ImGui gui)
         {
             var settings = ImText.GetTextSettings(gui, true, ImTextOverflow.Truncate);
             settings.Align = new ImAlignment(0.5f, 0.5f);

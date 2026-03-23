@@ -15,6 +15,14 @@ namespace Imui.Controls
         public int Columns;
         public int X;
         public int Y;
+
+        public bool HasBegun
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => !(Y == StartY && X == Columns);
+        }
+
+        internal const int StartY = -1;
         
         /// <summary>
         /// A value that is internally updated to give the current "Height" of the grid.
@@ -54,13 +62,17 @@ namespace Imui.Controls
             ref readonly var frame = ref gui.Layout.GetFrame();
 
             var width = gui.Layout.GetAvailableWidth();
-            var columns = Mathf.Max(1, (width + spacing.x) / (cellSize.x + spacing.x));
-            var state = new ImGridState()
+            var columns = (int)Math.Max(1, (width + spacing.x) / (cellSize.x + spacing.x));
+            var state = new ImGridState
             {
                 Origin = ImLayout.GetNextPosition(in frame, 0),
                 CellSize = cellSize,
-                Columns = (int)columns,
-                Spacing = spacing
+                Columns = columns,
+                Spacing = spacing,
+                
+                // initialize such that the next call to GetNextCell() returns rect at (0,0)
+                X = columns,
+                Y = ImGridState.StartY
             };
 
             return state;
@@ -123,7 +135,14 @@ namespace Imui.Controls
         {
             if (state.X < 0 || state.Y < 0 || state.X >= state.Columns)
             {
-                throw new IndexOutOfRangeException("Coordinates must be > 0, and xColumn must be < ImGridState.Columns");
+                if (!state.HasBegun)
+                {
+                    state.MoveNext();
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Coordinates must be > 0, and xColumn must be < ImGridState.Columns");
+                }
             }
             
             return CreateCellRect(ref state, state.X, state.Y);

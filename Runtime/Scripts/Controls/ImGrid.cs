@@ -109,6 +109,12 @@ namespace Imui.Controls
             state.X = state.IsAtEndOfRow() ? 0 : state.X + 1;
         }
 
+        public static void MovePrevColumnX(ref this ImGridState state)
+        {
+            var original = state.X == 0 ? state.Columns : state.X;
+            state.X = original - 1;
+        }
+
         /// <summary>
         /// Increments the row value, with no upper limit
         /// </summary>

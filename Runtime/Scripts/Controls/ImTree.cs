@@ -26,10 +26,10 @@ namespace Imui.Controls
 
     public static class ImTree
     {
-        public static bool BeginTreeNode(this ImGui gui, ReadOnlySpan<char> label, ImSize size = default, ImTreeNodeFlags flags = ImTreeNodeFlags.None)
+        public static bool BeginTreeNode(this ImGui gui, ReadOnlySpan<char> label, ImSize size = default, ImTreeNodeFlags flags = ImTreeNodeFlags.None, bool beginOpen = false)
         {
             var id = gui.GetNextControlId();
-            ref var state = ref gui.Storage.Get<ImTreeNodeState>(id);
+            ref var state = ref gui.Storage.Get(id, new ImTreeNodeState(beginOpen, false));
 
             flags |= ImTreeNodeFlags.NonSelectable;
 

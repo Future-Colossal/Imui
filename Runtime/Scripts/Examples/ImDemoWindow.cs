@@ -33,18 +33,23 @@ namespace Imui.Examples
     public static class ImDemoWindow
     {
         private static int selectedThemeIndex = 0;
-        private static ImTheme[] themes = { CreateTheme(0), CreateTheme(1), CreateTheme(2), CreateTheme(3), CreateTheme(4), CreateTheme(5), CreateTheme(6) };
+
+        private static ImTheme[] themes =
+        {
+            CreateTheme(0), CreateTheme(1), CreateTheme(2), CreateTheme(3), CreateTheme(4), CreateTheme(5), CreateTheme(6), CreateTheme(7)
+        };
 
         private static string[] themeNames =
         {
             nameof(ImThemeBuiltin.Light), nameof(ImThemeBuiltin.Dark), nameof(ImThemeBuiltin.Dear), nameof(ImThemeBuiltin.Orange),
-            nameof(ImThemeBuiltin.Terminal), nameof(ImThemeBuiltin.LightTouch), nameof(ImThemeBuiltin.DarkTouch)
+            nameof(ImThemeBuiltin.Terminal), nameof(ImThemeBuiltin.LightTouch), nameof(ImThemeBuiltin.DarkTouch), nameof(ImThemeBuiltin.Wire)
         };
 
         private static ImTheme CreateTheme(int index)
         {
             return index switch
             {
+                7 => ImThemeBuiltin.Wire(),
                 6 => ImThemeBuiltin.DarkTouch(),
                 5 => ImThemeBuiltin.LightTouch(),
                 4 => ImThemeBuiltin.Terminal(),
@@ -69,10 +74,11 @@ namespace Imui.Examples
             "Value 1", "Value 2", "Value 3", "Value 4", "Value 5", "Value 6", "Value 7", "Value 8", "Value 9", "Value 10", "Value 11", "Value 12"
         };
 
+        private static string textWithHint = string.Empty;
         private static string singleLineText = "Single line text edit";
         private static string multiLineText = "Multiline text\nedit";
-        private static float floatValue;
-        private static int intValue;
+        private static float floatValue = 10.5f;
+        private static int intValue = 105;
         private static bool isReadOnly;
         private static bool customDropdownOpen;
         private static ImDropdownPreviewType dropdownPreview;
@@ -94,6 +100,7 @@ namespace Imui.Examples
         private static Vector4 vec4 = new Vector4(1.0f, 2.0f, 3.0f, 4.0f);
         private static Vector2Int vec2int = new Vector2Int(1, 2);
         private static Vector3Int vec3int = new Vector3Int(1, 2, 3);
+        private static bool textEditWrap;
 
         private static bool selectMultipleValues = false;
         private static HashSet<string> selectedNodes = new HashSet<string>(8);
@@ -101,12 +108,12 @@ namespace Imui.Examples
         private static readonly ImDemoTreeNode[] treeNodes = new[]
         {
             new ImDemoTreeNode("Node 0",
-                new ImDemoTreeNode("Node 1"),
-                new ImDemoTreeNode("Node 2")),
+                               new ImDemoTreeNode("Node 1"),
+                               new ImDemoTreeNode("Node 2")),
             new ImDemoTreeNode("Node 3"), new ImDemoTreeNode("Node 4",
-                new ImDemoTreeNode("Node 5",
-                    new ImDemoTreeNode("Node 6"),
-                    new ImDemoTreeNode("Node 7")))
+                                                             new ImDemoTreeNode("Node 5",
+                                                                                new ImDemoTreeNode("Node 6"),
+                                                                                new ImDemoTreeNode("Node 7")))
         };
 
         private static HashSet<int> selectedValues = new HashSet<int>(values.Length);
@@ -235,8 +242,13 @@ namespace Imui.Examples
                 gui.EndDropdown();
             }
             gui.Separator("Text editors");
+            gui.TextEdit(ref textWithHint, hint: "Write something here");
             gui.TextEdit(ref singleLineText, multiline: false);
-            gui.TextEdit(ref multiLineText, multiline: true);
+            gui.Checkbox(ref textEditWrap, "Wrap Text");
+            using (gui.StyleScope(ref gui.Style.TextEdit.TextWrap, textEditWrap))
+            {
+                gui.TextEdit(ref multiLineText, multiline: true);
+            }
             gui.Separator("Sliders (with tooltips)");
             DrawSlidersDemo(gui);
             gui.Separator("Selection list (you can select multiple values)");
@@ -269,21 +281,9 @@ namespace Imui.Examples
             numericFlag |= showPlusMinusButtons ? ImNumericEditFlag.PlusMinus : ImNumericEditFlag.None;
             numericFlag |= useNumericSlider ? ImNumericEditFlag.Slider : ImNumericEditFlag.None;
 
-            gui.AddSpacingIfLayoutFrameNotEmpty();
-            gui.BeginHorizontal();
-            gui.BeginHorizontal(width: gui.GetLayoutWidth() * 0.6f);
-            gui.NumericEdit(ref floatValue, step: 0.05f, flags: numericFlag);
-            gui.EndHorizontal();
-            gui.Text(Format(" floatValue = ", floatValue, "0.0######"));
-            gui.EndHorizontal();
 
-            gui.AddSpacingIfLayoutFrameNotEmpty();
-            gui.BeginHorizontal();
-            gui.BeginHorizontal(width: gui.GetLayoutWidth() * 0.6f);
-            gui.NumericEdit(ref intValue, flags: numericFlag);
-            gui.EndHorizontal();
-            gui.Text(Format(" intValue = ", intValue));
-            gui.EndHorizontal();
+            gui.NumericEdit(ref floatValue, step: 0.05f, flags: numericFlag, format: "0.0### kg");
+            gui.NumericEdit(ref intValue, flags: numericFlag, format: "0 miles");
 
             gui.AddSpacingIfLayoutFrameNotEmpty();
             gui.Separator("Radio buttons (enum flags)");
@@ -370,7 +370,7 @@ namespace Imui.Examples
                             (node.Childrens.Length == 0 ? ImTreeNodeFlags.NonExpandable : 0);
                 var isSelected = selectedNodes.Contains(node.Name);
                 var expanded = gui.BeginTreeNode(ref isSelected, node.Name, flags: flags);
-                
+
                 SetSelected(node.Name, isSelected);
 
                 if (expanded)
@@ -437,15 +437,15 @@ namespace Imui.Examples
 
                     gui.EndMenu();
                 }
-                
+
                 if (gui.BeginMenu("Recursive"))
                 {
                     DrawMenuBarItems(gui, ref windowOpen);
                     gui.EndMenu();
                 }
-                
+
                 gui.Separator();
-                
+
                 if (gui.BeginMenu("Test"))
                 {
                     if (gui.BeginMenu("Same name submenu"))
@@ -455,25 +455,25 @@ namespace Imui.Examples
                     }
 
                     gui.PushId("Next Menu");
-                    
+
                     if (gui.BeginMenu("Same name submenu"))
                     {
                         gui.Menu("Item");
                         gui.EndMenu();
                     }
-                    
+
                     gui.PopId();
 
                     gui.EndMenu();
                 }
-                
+
                 gui.Separator();
-                
+
                 if (gui.Menu("Close"))
                 {
                     windowOpen = false;
                 }
-                
+
                 gui.EndMenu();
             }
 
@@ -488,11 +488,11 @@ namespace Imui.Examples
                 {
                     showDebugWindow = true;
                 }
-                
+
                 gui.EndMenu();
             }
         }
-        
+
         private static void DrawLayoutPage(ImGui gui)
         {
             gui.AddSpacing();
@@ -536,7 +536,7 @@ namespace Imui.Examples
             }
             gui.AddSpacing();
 
-#if UNITY_WEBGL
+#if UNITY_EDITOR
             if (gui.Button("Copy"))
             {
                 gui.Input.Clipboard = ImThemeEditor.BuildCodeString(in themes[selectedThemeIndex]);
@@ -683,7 +683,7 @@ namespace Imui.Examples
             var bounds = gui
                          .AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * 1.25f)
                          .WithPadding(left: bouncingBallSize / 2.0f, right: bouncingBallSize / 2.0f);
-            var dt = Time.deltaTime * bouncingBallSpeed;
+            var dt = Time.unscaledDeltaTime * bouncingBallSpeed;
 
             bouncingBallTime += dt;
 

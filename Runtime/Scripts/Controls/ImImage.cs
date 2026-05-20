@@ -124,7 +124,6 @@ namespace Imui.Controls
                 ref var v = ref buffer.Vertices[buffer.VerticesCount + i];
                 v.Position.x = offset.x + (vertexPosition.x / bounds.x) * rect.W;
                 v.Position.y = offset.y + (vertexPosition.y / bounds.y) * rect.H;
-                v.Position.z = gui.MeshDrawer.Depth;
                 v.UV = uvs[i];
                 v.Color = White;
                 v.Atlas = gui.MeshDrawer.Atlas;

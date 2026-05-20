@@ -11,18 +11,18 @@ namespace Imui.Rendering
     {
         public static readonly VertexAttributeDescriptor[] VertexAttributes = new VertexAttributeDescriptor[]
         {
-            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 2),
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 1)
         };
 
-        public Vector3 Position;
+        public Vector2 Position;
         public Color32 Color;
         public Vector2 UV;
         public float Atlas;
 
-        public ImVertex(Vector3 position, Color32 color, Vector2 uv, float atlas)
+        public ImVertex(Vector2 position, Color32 color, Vector2 uv, float atlas)
         {
             Position = position;
             Color = color;

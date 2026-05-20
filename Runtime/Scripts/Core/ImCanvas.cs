@@ -211,9 +211,7 @@ namespace Imui.Core
                 SafeAreaPadding.Bottom,
                 ScreenSize.x - SafeAreaPadding.Left - SafeAreaPadding.Right,
                 ScreenSize.y - SafeAreaPadding.Bottom - SafeAreaPadding.Top);
-
-        public bool NeedsDepth => needsDepth;
-
+        
         /// <summary>
         /// Size of screen
         /// </summary>
@@ -223,23 +221,7 @@ namespace Imui.Core
         /// Screen scale
         /// </summary>
         public float ScreenScale => screenScale;
-
-        /// <summary>
-        /// Z coordinate for all generated meshes
-        /// </summary>
-        public short DrawingDepth
-        {
-            get
-            {
-                return (short)drawingDepth;
-            }
-            set
-            {
-                drawingDepth = value;
-                needsDepth |= drawingDepth != 0;
-            }
-        }
-
+        
         /// <summary>
         /// Safe area padding for each side of the screen
         /// </summary>
@@ -252,8 +234,6 @@ namespace Imui.Core
         private ImDynamicArray<SettingsPref> settingsPrefStack;
         private Vector2 screenSize;
         private float screenScale;
-        private float drawingDepth = 0;
-        private bool needsDepth;
 
         private bool disposed;
 
@@ -583,7 +563,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = texScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddQuadTextured(rect.X, rect.Y, rect.W, rect.H);
         }
 
@@ -664,7 +643,6 @@ namespace Imui.Core
             }
 
             textDrawer.Color = color;
-            textDrawer.Depth = drawingDepth;
             textDrawer.AddTextWithLayout(text, in layout, position.x, position.y, in textClipRect);
         }
 
@@ -674,8 +652,8 @@ namespace Imui.Core
         /// <param name="text">The text to render.</param>
         /// <param name="color">The color of the text.</param>
         /// <param name="rect">The bounding rectangle for the text.</param>
-        /// <param name="settings">The settings for text alignment, size, and wrapping.</param>
-        public void Text(ReadOnlySpan<char> text, Color32 color, ImRect rect, in ImTextSettings settings)
+        /// <param name="settings">The settings for text alignment, size and wrapping.</param>
+        public void Text(ReadOnlySpan<char> text, Color32 color, in ImRect rect, in ImTextSettings settings)
         {
             ref readonly var layout = ref textDrawer.BuildTempLayout(
                 text, rect.W, rect.H,
@@ -759,7 +737,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = settings.TexScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddLine(stackalloc Vector2[2] { p0, p1 }, false, thickness, outer, inner);
         }
 
@@ -788,7 +765,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = settings.TexScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddLine(path, closed, thickness, outer, inner);
         }
 
@@ -816,7 +792,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = texScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddLineMiter(path, closed, thickness, outer, inner);
         }
 
@@ -830,7 +805,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = texScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddFilledConvexMesh(points);
         }
 
@@ -845,7 +819,6 @@ namespace Imui.Core
             meshDrawer.Color = color;
             meshDrawer.ScaleOffset = texScaleOffset;
             meshDrawer.Atlas = ImMeshDrawer.MAIN_TEX_ID;
-            meshDrawer.Depth = drawingDepth;
             meshDrawer.AddFilledConvexMeshTextured(points, bounds.X, bounds.Y, bounds.W, bounds.H);
         }
 

@@ -1,8 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using Imui.Core;
-using Imui.Style;
-using UnityEngine;
 
 namespace Imui.Controls
 {
@@ -76,7 +74,16 @@ namespace Imui.Controls
             }
 
             gui.Box(state->Content, in gui.Style.Tabs.ContainerBox);
-            CoverSeam(gui, state->Content, rect);
+
+            if (gui.Style.Tabs.SeparatorThickness > 0.0f)
+            {
+                var sepRect = state->Content.TakeTop(gui.Style.Tabs.SeparatorThickness);
+                gui.Canvas.Rect(sepRect, gui.Style.Tabs.SeparatorColor);
+            }
+            else
+            {
+                CoverSeam(gui, state->Content, rect);
+            }
 
             gui.PushId(id);
             gui.Layout.Push(ImAxis.Vertical, state->Content.WithPadding(gui.Style.Layout.Spacing));
@@ -119,27 +126,14 @@ namespace Imui.Controls
 
         public static bool TabBarButton(ImGui gui, uint id, bool selected, ReadOnlySpan<char> label, ImRect rect)
         {
-            var prevButtonStyle = gui.Style.Button;
-            gui.Style.Button = selected ? gui.Style.Tabs.Selected : gui.Style.Tabs.Normal;
+            ref readonly var buttonStyle = ref (selected ? ref gui.Style.Tabs.Selected : ref gui.Style.Tabs.Normal);
 
-            var clicked = gui.Button(id, rect, out var state, adjacency: ImAdjacency.Top);
-            ref readonly var stateStyle = ref ImButton.GetStateStyle(gui, state);
-
-            if (selected)
-            {
-                var p = gui.Style.Button.BorderThickness;
-                var r = Mathf.Max(0, gui.Style.Button.BorderRadius - p);
-                var indicatorRect = rect.TakeTop(Mathf.Max(3, gui.Style.Button.BorderRadius)).WithPadding(left: p, right: p, top: p);
-                var indicatorRadius = new ImRectRadius(topLeft: r, topRight: r);
-
-                gui.Canvas.Rect(indicatorRect, gui.Style.Tabs.IndicatorColor, indicatorRadius);
-            }
-
+            var clicked = gui.Button(id, rect, in buttonStyle, out var state);
+            var frontColor = ImButton.GetStateFrontColor(in buttonStyle, state);
             var textSettings = GetTextSettings(gui);
-            gui.Text(label, in textSettings, stateStyle.FrontColor, rect);
-
-            gui.Style.Button = prevButtonStyle;
-
+            
+            gui.Text(label, in textSettings, frontColor, rect);
+            
             return clicked;
         }
 
@@ -147,8 +141,8 @@ namespace Imui.Controls
         {
             var rect = button.TakeBottom(gui.Style.Button.BorderThickness + gui.Style.Tabs.ContainerBox.BorderThickness);
 
-            rect.Y -= gui.Style.Tabs.ContainerBox.BorderThickness;
-            rect.H += gui.Style.Tabs.ContainerBox.BorderThickness;
+            rect.Y -= gui.Style.Tabs.ContainerBox.BorderThickness * 2.0f;
+            rect.H += gui.Style.Tabs.ContainerBox.BorderThickness * 2.0f;
             rect.X += gui.Style.Button.BorderThickness;
             rect.W -= gui.Style.Button.BorderThickness * 2;
 

@@ -1,5 +1,6 @@
 using System;
 using Imui.Core;
+using Imui.Rendering;
 
 namespace Imui.Controls
 {
@@ -179,7 +180,7 @@ namespace Imui.Controls
                 changed = true;
             }
 
-            var boxStyle = ImButton.GetStateBoxStyle(in buttonStyle, buttonState);
+            var boxStyle = ImButton.MakeBoxStyle(in buttonStyle, buttonState);
             if (boxStyle.BackColor.a > 0)
             {
                 gui.Box(rect, boxStyle);
@@ -197,7 +198,7 @@ namespace Imui.Controls
                 }
             }
 
-            var textSettings = new ImTextSettings(gui.Style.Layout.TextSize, buttonStyle.Alignment);
+            var textSettings = new ImTextSettings(gui.Style.Layout.TextSize, buttonStyle.Alignment, buttonStyle.WrapText, buttonStyle.Overflow);
             gui.Text(label, textSettings, boxStyle.FrontColor, labelRect);
 
             return changed;

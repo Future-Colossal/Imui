@@ -13,35 +13,6 @@ namespace Imui.Style
         public Color32 BorderColor;
         public float BorderThickness;
         public ImRectRadius BorderRadius;
-
-        public ImStyleBox MakeAdjacent(ImAdjacency adjacency)
-        {
-            if ((adjacency & ImAdjacency.Left) != 0)
-            {
-                BorderRadius.BottomRight = 0;
-                BorderRadius.TopRight = 0;
-            }
-
-            if ((adjacency & ImAdjacency.Right) != 0)
-            {
-                BorderRadius.BottomLeft = 0;
-                BorderRadius.TopLeft = 0;
-            }
-
-            if ((adjacency & ImAdjacency.Top) != 0)
-            {
-                BorderRadius.BottomLeft = 0;
-                BorderRadius.BottomRight = 0;
-            }
-
-            if ((adjacency & ImAdjacency.Bottom) != 0)
-            {
-                BorderRadius.TopLeft = 0;
-                BorderRadius.TopRight = 0;
-            }
-
-            return this;
-        }
     }
 
     [Serializable]
@@ -69,9 +40,10 @@ namespace Imui.Style
         public ImStyleButtonState Hovered;
         public ImStyleButtonState Pressed;
         public float BorderThickness;
-        public float BorderRadius;
+        public ImRectRadius BorderRadius;
         public ImAlignment Alignment;
         public ImTextOverflow Overflow;
+        public bool WrapText;
     }
 
     [Serializable]
@@ -86,6 +58,7 @@ namespace Imui.Style
     public struct ImStyleDropdown
     {
         public float ArrowScale;
+        public float ArrowThickness;
         public ImStyleButton Button;
     }
 
@@ -118,6 +91,7 @@ namespace Imui.Style
     {
         public Color32 BackColor;
         public Color32 FrontColor;
+        public Color32 BorderColor;
     }
 
     [Serializable]
@@ -125,7 +99,9 @@ namespace Imui.Style
     {
         public float Size;
         public float BorderThickness;
+        public float HandlePadding;
         public float BorderRadius;
+        public float MinHandleAspect;
         public ImPadding VMargin;
         public ImPadding HMargin;
         public ImStyleScrollBarState NormalState;
@@ -178,6 +154,8 @@ namespace Imui.Style
         public float CaretWidth;
         public ImAlignment Alignment;
         public bool TextWrap;
+        public ImPadding Padding;
+        public Color32 HintFrontColor;
     }
 
     [Serializable]
@@ -253,8 +231,9 @@ namespace Imui.Style
     {
         public ImStyleButton Normal;
         public ImStyleButton Selected;
-        public Color32 IndicatorColor;
         public ImStyleBox ContainerBox;
+        public float SeparatorThickness;
+        public Color32 SeparatorColor;
     }
 
     [Serializable]

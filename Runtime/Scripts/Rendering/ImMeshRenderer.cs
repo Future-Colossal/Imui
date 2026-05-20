@@ -1,5 +1,6 @@
 using System;
 using Imui.Utility;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -45,6 +46,7 @@ namespace Imui.Rendering
             mesh.Clear(true);
 
             buffer.Trim();
+            buffer.Sort();
 
             mesh.SetIndexBufferParams(buffer.IndicesCount, IndexFormat.UInt32);
             mesh.SetVertexBufferParams(buffer.VerticesCount, ImVertex.VertexAttributes);
@@ -52,18 +54,12 @@ namespace Imui.Rendering
             mesh.SetVertexBufferData(buffer.Vertices, 0, 0, buffer.VerticesCount, 0, MESH_UPDATE_FLAGS);
             mesh.SetIndexBufferData(buffer.Indices, 0, 0, buffer.IndicesCount, MESH_UPDATE_FLAGS);
 
-            if (mesh.subMeshCount != buffer.MeshesCount)
-            {
-                mesh.subMeshCount = buffer.MeshesCount;
-            }
-
-            buffer.Sort();
-
+            var descriptors = new NativeArray<SubMeshDescriptor>(buffer.MeshesCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             for (int i = 0; i < buffer.MeshesCount; ++i)
             {
-                ref var info = ref buffer.Meshes[i];
-
-                var desc = new SubMeshDescriptor()
+                ref readonly var info = ref buffer.Meshes[i];
+                
+                descriptors[i] = new SubMeshDescriptor()
                 {
                     topology = info.Topology,
                     indexStart = info.IndicesOffset,
@@ -72,10 +68,9 @@ namespace Imui.Rendering
                     firstVertex = info.VerticesOffset,
                     vertexCount = info.VerticesCount
                 };
-
-                mesh.SetSubMesh(i, desc, MESH_UPDATE_FLAGS);
             }
-
+            
+            mesh.SetSubMeshes(descriptors, MESH_UPDATE_FLAGS);
             mesh.UploadMeshData(false);
 
             var maskScale = screenScale * new Vector2(targetSize.x / screenSize.x, targetSize.y / screenSize.y);

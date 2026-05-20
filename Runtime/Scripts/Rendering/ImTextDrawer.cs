@@ -125,7 +125,6 @@ namespace Imui.Rendering
         public ImGlyphRenderMode RenderMode => renderMode;
         public bool IsFontLoaded => FontAsset;
 
-        public float Depth;
         public Color32 Color;
 
         public float FontRenderSize => renderSize;
@@ -225,8 +224,10 @@ namespace Imui.Rendering
             
             ImUnityUtility.Destroy(fontAsset);
             fontAsset = null;
-            
+
+#if !UNITY_6000_0_OR_NEWER // (artem-s): apparently this causes UIToolkit to do something weird in background threads. At this point I'm just brute forcing all this shit. 
             ReflectionUtility.RebuildFontAssetCache(); // (artem-s): rebuilds lookup cache after font asset destroyed, JUST IN CASE
+#endif
         }
 
         public void ApplyAtlasChanges(bool force = false) {
@@ -235,14 +236,7 @@ namespace Imui.Rendering
                 atlasDirty = false;
             }
         }
-
-        public void ApplyAtlasChanges() {
-            if (atlasDirty) {
-                atlasDirty = false;
-                fontAsset.atlasTexture.Apply();
-            }
-        }
-
+        
         public float GetLineHeightFromFontSize(float size)
         {
             return FontLineHeight * (size / FontRenderSize);
@@ -430,7 +424,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = p0x;
             v0.Position.y = p0y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = glyph.uv0x;
             v0.UV.y = glyph.uv0y;
@@ -439,7 +432,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = p0x;
             v1.Position.y = p1y;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = glyph.uv0x;
             v1.UV.y = glyph.uv1y;
@@ -448,7 +440,6 @@ namespace Imui.Rendering
             ref var v2 = ref buffer.Vertices[vc + 2];
             v2.Position.x = p1x;
             v2.Position.y = p1y;
-            v2.Position.z = Depth;
             v2.Color = Color;
             v2.UV.x = glyph.uv1x;
             v2.UV.y = glyph.uv1y;
@@ -457,7 +448,6 @@ namespace Imui.Rendering
             ref var v3 = ref buffer.Vertices[vc + 3];
             v3.Position.x = p1x;
             v3.Position.y = p0y;
-            v3.Position.z = Depth;
             v3.Color = Color;
             v3.UV.x = glyph.uv1x;
             v3.UV.y = glyph.uv0y;
@@ -501,10 +491,12 @@ namespace Imui.Rendering
         {
             const float NEXT_LINE_WIDTH_THRESHOLD = 0.0001f;
             const int NO_LINE_BREAK = -1;
+            const float EPSILON = 0.001f;
 
             layout.LinesCount = 0;
             layout.Scale = size / FontRenderSize;
             layout.OffsetX = boundsWidth * alignX;
+            layout.OffsetY = 0.0f;
             layout.Width = 0;
             layout.Height = 0;
             layout.Size = size;
@@ -527,7 +519,7 @@ namespace Imui.Rendering
             var lineStart = 0;
             var textLength = text.Length;
             var charsTable = fontAsset.characterLookupTable;
-
+            var maxLines = overflow == ImTextOverflow.Overflow || boundsHeight <= 0.0f ? int.MaxValue : (int)((boundsHeight + EPSILON) / layout.LineHeight);
             var lastLineBreak = NO_LINE_BREAK;
             var lineWidthAtLineBreak = 0.0f;
             var wasBreakingChar = false;
@@ -593,12 +585,18 @@ namespace Imui.Rendering
                     {
                         maxLineWidth = line.Width;
                     }
-
-                    lineWidth = advance;
-                    lineStart = i + (newLine ? 1 : 0);
+                    
+                    layout.LinesCount++;
+                    
+                    if (layout.LinesCount >= maxLines)
+                    {
+                        break;
+                    }
 
                     layout.OffsetX = Mathf.Min(line.OffsetX, layout.OffsetX);
-                    layout.LinesCount++;
+                    
+                    lineWidth = advance;
+                    lineStart = i + (newLine ? 1 : 0);
 
                     if (layout.LinesCount >= layout.Lines.Length)
                     {
@@ -613,7 +611,7 @@ namespace Imui.Rendering
                 }
             }
 
-            if (text.Length > lineStart || text[lineStart - 1] == NEW_LINE)
+            if ((layout.LinesCount < maxLines) && (text.Length > lineStart || text[lineStart - 1] == NEW_LINE))
             {
                 ref var line = ref layout.Lines[layout.LinesCount];
 

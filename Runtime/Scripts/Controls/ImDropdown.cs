@@ -20,6 +20,8 @@ namespace Imui.Controls
 
     public static unsafe class ImDropdown
     {
+        private const float ARROW_ASPECT_RATIO = 2.0f;
+        
         public static ImRect GetRect(ImGui gui, ImSize size)
         {
             return gui.AddSingleRowRect(size, minWidth: gui.GetRowHeight());
@@ -213,47 +215,94 @@ namespace Imui.Controls
         {
             if (preview == ImDropdownPreviewType.Arrow || (rect.H > 0.0f && rect.W / rect.H < 2.0f))
             {
-                return ArrowButton(gui, id, rect);
+                return ArrowAccentButton(gui, id, rect);
             }
 
             var borderWidth = gui.Style.Dropdown.Button.BorderThickness;
             var arrowWidth = Mathf.Min(rect.W * 0.5f, rect.H);
             var buttonRect = rect.TakeRight(arrowWidth, -borderWidth, out var previewRect);
-            var clicked = ArrowButton(gui, id, buttonRect, ImAdjacency.Right);
+            var paddedButtonRect = buttonRect.WithPadding(gui.Style.Global.EmbeddedButtonPadding);
+            var clicked = false;
 
             switch (preview)
             {
                 case ImDropdownPreviewType.Text:
-                    gui.TextEditReadonly(label, previewRect, false, ImAdjacency.Left);
+                    var padding = gui.Style.TextEdit.Padding.Right;
+                    
+                    try
+                    {
+                        gui.Style.TextEdit.Padding.Right = buttonRect.W;
+                        gui.TextEditNonEditable(label, rect, false);
+                    }
+                    finally
+                    {
+                        gui.Style.TextEdit.Padding.Right = padding;
+                    }
+
+                    clicked = ArrowAccentButton(gui, id, paddedButtonRect);
                     break;
                 case ImDropdownPreviewType.Default:
-                    using (gui.StyleScope(ref gui.Style.Button, in gui.Style.Dropdown.Button))
-                    {
-                        clicked |= gui.Button(id, label, previewRect, adjacency: ImAdjacency.Left);
-                    }
+                    var previewTextRect = ImButton.CalculateContentRect(gui, previewRect);
+                    clicked |= gui.Button(id, label, in rect, in previewTextRect, in gui.Style.Dropdown.Button, out _);
+                    clicked |= ArrowInvisibleButton(gui, id, buttonRect);
                     break;
             }
 
+            gui.RegisterControl(id, buttonRect);
             gui.SetLastControl(id, rect);
 
             return clicked;
         }
-
-        public static bool ArrowButton(ImGui gui, uint id, ImRect rect, ImAdjacency adjacency = ImAdjacency.None)
+        
+        public static bool ArrowAccentButton(ImGui gui, uint id, ImRect rect)
         {
-            bool clicked;
+            ref readonly var buttonStyle = ref gui.Style.AccentButton;
+            
+            var clicked = gui.Button(id, rect, in buttonStyle, out var state);
 
-            using (gui.StyleScope(ref gui.Style.Button, in gui.Style.Dropdown.Button))
-            {
-                clicked = gui.Button(id, rect, out var state, adjacency: adjacency);
+            rect = rect.WithAspect(1.0f);
+            rect = rect.ScaleFromCenter(gui.Style.Layout.TextSize / rect.W);
 
-                rect = rect.WithAspect(1.0f);
-                rect = rect.ScaleFromCenter(gui.Style.Layout.TextSize / rect.W);
-
-                ImFoldout.DrawArrowDown(gui.Canvas, rect, ImButton.GetStateFrontColor(gui, state), gui.Style.Dropdown.ArrowScale);
-            }
+            DrawArrow(gui, rect, ImButton.GetStateFrontColor(in buttonStyle, state));
 
             return clicked;
+        }
+        
+        public static bool ArrowInvisibleButton(ImGui gui, uint id, ImRect rect)
+        {
+            ref readonly var buttonStyle = ref gui.Style.Dropdown.Button;
+            
+            var clicked = gui.InvisibleButton(id, rect, out var state);
+
+            rect = rect.WithAspect(1.0f);
+            rect = rect.ScaleFromCenter(gui.Style.Layout.TextSize / rect.W);
+
+            DrawArrow(gui, rect, ImButton.GetStateFrontColor(in buttonStyle, state));
+
+            return clicked;
+        }
+        
+        public static void DrawArrow(ImGui gui, ImRect rect, Color32 color)
+        {
+            if (gui.Style.Dropdown.ArrowScale <= 0.0f)
+            {
+                return;
+            }
+            
+            rect = rect.ScaleFromCenter(gui.Style.Dropdown.ArrowScale);
+            rect = rect.WithAspect(ARROW_ASPECT_RATIO);
+            
+            if (gui.Canvas.Cull(rect))
+            {
+                return;
+            }
+
+            Span<Vector2> points = stackalloc Vector2[3]
+            {
+                new Vector2(rect.X + rect.W, rect.Y + rect.H), new Vector2(rect.X + rect.W * 0.5f, rect.Y), new Vector2(rect.X, rect.Y + rect.H),
+            };
+            
+            gui.Canvas.LineMiter(points, color, false, gui.Style.Dropdown.ArrowThickness);
         }
     }
 }

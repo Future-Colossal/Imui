@@ -317,7 +317,7 @@ namespace Imui.Core
 
             ref var block = ref blocks.Array[segment.Block];
 
-            ImAssert.IsTrue(segment.Offset > 0, "segment.Offset > 0");
+            ImAssert.IsTrue(segment.Offset >= 0, "segment.Offset >= 0");
             ImAssert.IsTrue(segment.Offset < block.Capacity, "segment.Offset < dataSize");
             ImAssert.IsTrue(segment.Size <= block.Size, "segment.Size <= dataSize");
 

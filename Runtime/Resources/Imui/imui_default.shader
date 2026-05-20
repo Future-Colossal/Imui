@@ -12,7 +12,7 @@
     SubShader
     {
         Tags { "RenderType" = "Transparent" }
-        Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha One
+        Blend One OneMinusSrcAlpha
         ZTest LEqual 
         ZWrite On
         Cull Back 
@@ -27,7 +27,7 @@
 
             struct appdata
             {
-                float3 vertex : POSITION;
+                float2 vertex : POSITION;
                 float4 color  : COLOR;
                 float2 uv     : TEXCOORD0;
                 float  atlas  : TEXCOORD1;
@@ -61,7 +61,7 @@
             v2f vert(appdata data)
             {
                 v2f o;
-                o.vertex = mul(_VP, float4(data.vertex, 1.0));
+                o.vertex = mul(_VP, float4(float3(data.vertex, 0.0), 1.0));
                 o.color = data.color;
                 o.uv = data.uv;
                 o.atlas = data.atlas;
@@ -89,7 +89,7 @@
                     ? 1 - saturate(sdf_round_box(i.vertex.xy - _MaskRect.xy, _MaskRect.zw, _MaskCornerRadius) * 2 + 1)
                     : 1;
                 col *= i.color;
-                col.rgb *= (1 - _InvColorMul);
+                col.rgb *= col.a * (1 - _InvColorMul);
                 
                 return col;
             }

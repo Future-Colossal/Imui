@@ -13,8 +13,7 @@ namespace Imui.Rendering
         private const int SQRT_TABLE_SIZE = 500;
         private const float SQRT_TABLE_RES = 0.1f;
         private const float SQRT_TABLE_MAX = SQRT_TABLE_SIZE * SQRT_TABLE_RES;
-
-        public float Depth;
+        
         public float Atlas;
         public Color32 Color;
         public Vector4 ScaleOffset;
@@ -87,7 +86,6 @@ namespace Imui.Rendering
                 ref var v0 = ref buffer.Vertices[vc + 0];
                 v0.Position.x = a.x + normalX * -1 * outerThickness;
                 v0.Position.y = a.y + normalY * -1 * outerThickness;
-                v0.Position.z = Depth;
                 v0.Color = Color;
                 v0.UV.x = ScaleOffset.z;
                 v0.UV.y = ScaleOffset.w;
@@ -96,7 +94,6 @@ namespace Imui.Rendering
                 ref var v1 = ref buffer.Vertices[vc + 1];
                 v1.Position.x = a.x + normalX * innerThickness;
                 v1.Position.y = a.y + normalY * innerThickness;
-                v1.Position.z = Depth;
                 v1.Color = Color;
                 v1.UV.x = ScaleOffset.z;
                 v1.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -105,7 +102,6 @@ namespace Imui.Rendering
                 ref var v2 = ref buffer.Vertices[vc + 2];
                 v2.Position.x = b.x + normalX * -1 * outerThickness;
                 v2.Position.y = b.y + normalY * -1 * outerThickness;
-                v2.Position.z = Depth;
                 v2.Color = Color;
                 v2.UV.x = ScaleOffset.z + ScaleOffset.x;
                 v2.UV.y = ScaleOffset.w;
@@ -114,7 +110,6 @@ namespace Imui.Rendering
                 ref var v3 = ref buffer.Vertices[vc + 3];
                 v3.Position.x = b.x + normalX * innerThickness;
                 v3.Position.y = b.y + normalY * innerThickness;
-                v3.Position.z = Depth;
                 v3.Color = Color;
                 v3.UV.x = ScaleOffset.z + ScaleOffset.x;
                 v3.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -147,7 +142,6 @@ namespace Imui.Rendering
                 ref var v0 = ref buffer.Vertices[vc + 0];
                 v0.Position.x = a.x + normalX * -1 * outerThickness;
                 v0.Position.y = a.y + normalY * -1 * outerThickness;
-                v0.Position.z = Depth;
                 v0.Color = Color;
                 v0.UV.x = ScaleOffset.z;
                 v0.UV.y = ScaleOffset.w;
@@ -156,7 +150,6 @@ namespace Imui.Rendering
                 ref var v1 = ref buffer.Vertices[vc + 1];
                 v1.Position.x = a.x + normalX * innerThickness;
                 v1.Position.y = a.y + normalY * innerThickness;
-                v1.Position.z = Depth;
                 v1.Color = Color;
                 v1.UV.x = ScaleOffset.z;
                 v1.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -165,7 +158,6 @@ namespace Imui.Rendering
                 ref var v2 = ref buffer.Vertices[vc + 2];
                 v2.Position.x = b.x + normalX * -1 * outerThickness;
                 v2.Position.y = b.y + normalY * -1 * outerThickness;
-                v2.Position.z = Depth;
                 v2.Color = Color;
                 v2.UV.x = ScaleOffset.z + ScaleOffset.x;
                 v2.UV.y = ScaleOffset.w;
@@ -174,7 +166,6 @@ namespace Imui.Rendering
                 ref var v3 = ref buffer.Vertices[vc + 3];
                 v3.Position.x = b.x + normalX * innerThickness;
                 v3.Position.y = b.y + normalY * innerThickness;
-                v3.Position.z = Depth;
                 v3.Color = Color;
                 v3.UV.x = ScaleOffset.z + ScaleOffset.x;
                 v3.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -276,7 +267,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = path[0].x + prevNormX * -1 * outerThickness;
             v0.Position.y = path[0].y + prevNormY * -1 * outerThickness;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z;
             v0.UV.y = ScaleOffset.w;
@@ -285,7 +275,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = path[0].x + prevNormX * innerThickness;
             v1.Position.y = path[0].y + prevNormY * innerThickness;
-            v1.Position.z = Depth;
             v1.Color = Color;                
             v1.UV.x = ScaleOffset.z;
             v1.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -358,7 +347,6 @@ namespace Imui.Rendering
                 ref var v2 = ref buffer.Vertices[vc + 2];
                 v2.Position.x = b.x + normalX * -1 * outerThickness / scale;
                 v2.Position.y = b.y + normalY * -1 * outerThickness / scale;
-                v2.Position.z = Depth;
                 v2.Color = Color;
                 v2.UV.x = ScaleOffset.z;
                 v2.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -367,7 +355,6 @@ namespace Imui.Rendering
                 ref var v3 = ref buffer.Vertices[vc + 3];
                 v3.Position.x = b.x + normalX * innerThickness / scale;
                 v3.Position.y = b.y + normalY * innerThickness / scale;
-                v3.Position.z = Depth;
                 v3.Color = Color;
                 v3.UV.x = ScaleOffset.z + ScaleOffset.x;
                 v3.UV.y = ScaleOffset.w + ScaleOffset.y;
@@ -406,7 +393,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = center.x;
             v0.Position.y = center.y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z;
             v0.UV.y = ScaleOffset.w;
@@ -415,7 +401,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = center.x + Mathf.Cos(from) * radius;
             v1.Position.y = center.y + Mathf.Sin(from) * radius;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z;
             v1.UV.y = ScaleOffset.w;
@@ -430,7 +415,6 @@ namespace Imui.Rendering
                 ref var v2 = ref buffer.Vertices[idx];
                 v2.Position.x = center.x + Mathf.Cos(a) * radius;
                 v2.Position.y = center.y + Mathf.Sin(a) * radius;
-                v2.Position.z = Depth;
                 v2.Color = Color;
                 v2.UV.x = ScaleOffset.z;
                 v2.UV.y = ScaleOffset.w;
@@ -468,7 +452,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = center.x;
             v0.Position.y = center.y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z + (center.x - x) / w * ScaleOffset.x;
             v0.UV.y = ScaleOffset.w + (center.y - y) / h * ScaleOffset.y;
@@ -477,7 +460,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = center.x + Mathf.Cos(from) * radius;
             v1.Position.y = center.y + Mathf.Sin(from) * radius;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z + (v1.Position.x - x) / w * ScaleOffset.x;
             v1.UV.y = ScaleOffset.w + (v1.Position.y - y) / h * ScaleOffset.y;
@@ -492,7 +474,6 @@ namespace Imui.Rendering
                 ref var v2 = ref buffer.Vertices[idx];
                 v2.Position.x = center.x + Mathf.Cos(a) * radius;
                 v2.Position.y = center.y + Mathf.Sin(a) * radius;
-                v2.Position.z = Depth;
                 v2.Color = Color;
                 v2.UV.x = ScaleOffset.z + (v2.Position.x - x) / w * ScaleOffset.x;
                 v2.UV.y = ScaleOffset.w + (v2.Position.y - y) / h * ScaleOffset.y;
@@ -522,7 +503,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = x0;
             v0.Position.y = y0;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z;
             v0.UV.y = ScaleOffset.w;
@@ -531,7 +511,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = x1;
             v1.Position.y = y1;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z;
             v1.UV.y = (ScaleOffset.w + ScaleOffset.y);
@@ -540,7 +519,6 @@ namespace Imui.Rendering
             ref var v2 = ref buffer.Vertices[vc + 2];
             v2.Position.x = x2;
             v2.Position.y = y2;
-            v2.Position.z = Depth;
             v2.Color = Color;
             v2.UV.x = (ScaleOffset.z + ScaleOffset.x);
             v2.UV.y = (ScaleOffset.w + ScaleOffset.y);
@@ -549,7 +527,6 @@ namespace Imui.Rendering
             ref var v3 = ref buffer.Vertices[vc + 3];
             v3.Position.x = x3;
             v3.Position.y = y3;
-            v3.Position.z = Depth;
             v3.Color = Color;
             v3.UV.x = (ScaleOffset.z + ScaleOffset.x);
             v3.UV.y = (ScaleOffset.w);
@@ -609,7 +586,6 @@ namespace Imui.Rendering
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = x;
             v0.Position.y = y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z;
             v0.UV.y = ScaleOffset.w;
@@ -618,7 +594,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = x;
             v1.Position.y = y + h;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z;
             v1.UV.y = (ScaleOffset.w + ScaleOffset.y);
@@ -627,7 +602,6 @@ namespace Imui.Rendering
             ref var v2 = ref buffer.Vertices[vc + 2];
             v2.Position.x = x + w;
             v2.Position.y = y + h;
-            v2.Position.z = Depth;
             v2.Color = Color;
             v2.UV.x = (ScaleOffset.z + ScaleOffset.x);
             v2.UV.y = (ScaleOffset.w + ScaleOffset.y);
@@ -636,7 +610,6 @@ namespace Imui.Rendering
             ref var v3 = ref buffer.Vertices[vc + 3];
             v3.Position.x = x + w;
             v3.Position.y = y;
-            v3.Position.z = Depth;
             v3.Color = Color;
             v3.UV.x = (ScaleOffset.z + ScaleOffset.x);
             v3.UV.y = (ScaleOffset.w);
@@ -664,14 +637,13 @@ namespace Imui.Rendering
             var vc = buffer.VerticesCount;
             var ic = buffer.IndicesCount;
 
-            buffer.EnsureVerticesCapacity(vc + points.Length * 4);
+            buffer.EnsureVerticesCapacity(vc + points.Length);
             buffer.EnsureIndicesCapacity(ic + (points.Length - 2) * 3);
 
             ref readonly var p0 = ref points[0];
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = p0.x;
             v0.Position.y = p0.y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z;
             v0.UV.y = ScaleOffset.w;
@@ -681,7 +653,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = p1.x;
             v1.Position.y = p1.y;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z;
             v1.UV.y = ScaleOffset.w;
@@ -693,7 +664,6 @@ namespace Imui.Rendering
                 ref var v = ref buffer.Vertices[vc + i];
                 v.Position.x = p.x;
                 v.Position.y = p.y;
-                v.Position.z = Depth;
                 v.Color = Color;
                 v.UV.x = ScaleOffset.z;
                 v.UV.y = ScaleOffset.w;
@@ -706,7 +676,7 @@ namespace Imui.Rendering
                 ic += 3;
             }
 
-            buffer.AddVertices(points.Length * 4);
+            buffer.AddVertices(points.Length);
             buffer.AddIndices((points.Length - 2) * 3);
 
             ImProfiler.EndSample();
@@ -721,14 +691,13 @@ namespace Imui.Rendering
             var vc = buffer.VerticesCount;
             var ic = buffer.IndicesCount;
 
-            buffer.EnsureVerticesCapacity(vc + points.Length * 4);
+            buffer.EnsureVerticesCapacity(vc + points.Length);
             buffer.EnsureIndicesCapacity(ic + (points.Length - 2) * 3);
 
             ref readonly var p0 = ref points[0];
             ref var v0 = ref buffer.Vertices[vc + 0];
             v0.Position.x = p0.x;
             v0.Position.y = p0.y;
-            v0.Position.z = Depth;
             v0.Color = Color;
             v0.UV.x = ScaleOffset.z + (p0.x - x) / w * ScaleOffset.x;
             v0.UV.y = ScaleOffset.w + (p0.y - y) / h * ScaleOffset.y;
@@ -738,7 +707,6 @@ namespace Imui.Rendering
             ref var v1 = ref buffer.Vertices[vc + 1];
             v1.Position.x = p1.x;
             v1.Position.y = p1.y;
-            v1.Position.z = Depth;
             v1.Color = Color;
             v1.UV.x = ScaleOffset.z + (p1.x - x) / w * ScaleOffset.x;
             v1.UV.y = ScaleOffset.w + (p1.y - y) / h * ScaleOffset.y;
@@ -750,7 +718,6 @@ namespace Imui.Rendering
                 ref var v = ref buffer.Vertices[vc + i];
                 v.Position.x = p.x;
                 v.Position.y = p.y;
-                v.Position.z = Depth;
                 v.Color = Color;
                 v.UV.x = ScaleOffset.z + (p.x - x) / w * ScaleOffset.x;
                 v.UV.y = ScaleOffset.w + (p.y - y) / h * ScaleOffset.y;
@@ -763,7 +730,7 @@ namespace Imui.Rendering
                 ic += 3;
             }
 
-            buffer.AddVertices(points.Length * 4);
+            buffer.AddVertices(points.Length);
             buffer.AddIndices((points.Length - 2) * 3);
 
             ImProfiler.EndSample();

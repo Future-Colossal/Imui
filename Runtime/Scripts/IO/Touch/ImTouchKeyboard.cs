@@ -2,6 +2,11 @@ using System;
 using Imui.IO.Events;
 using UnityEngine;
 
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+#endif
+
 namespace Imui.IO.Touch
 {
     public enum ImTouchKeyboardType
@@ -15,6 +20,7 @@ namespace Imui.IO.Touch
         public bool Muiltiline;
         public ImTouchKeyboardType Type;
         public int CharactersLimit;
+        public RangeInt Selection;
     }
 
     public class ImTouchKeyboard: IDisposable
@@ -23,8 +29,40 @@ namespace Imui.IO.Touch
 
         public TouchScreenKeyboard TouchKeyboard;
 
+        public bool NativeInputFieldHidden
+        {
+            get
+            {
+                var inputFieldHidden = TouchScreenKeyboard.hideInput;
+
+#if UNITY_6000_0_OR_NEWER
+                inputFieldHidden |= TouchScreenKeyboard.inputFieldAppearance == TouchScreenKeyboard.InputFieldAppearance.AlwaysHidden;
+#endif
+
+                return inputFieldHidden;
+            }
+        }
+
         private uint touchKeyboardOwner;
         private int touchKeyboardRequestFrame;
+        private bool textInputDirty;
+
+        public ImTouchKeyboard()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                Keyboard.current.onIMECompositionChange += OnTextInput;
+            }
+#endif
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        private void OnTextInput(IMECompositionString c)
+        {
+            textInputDirty = true;
+        }
+#endif
 
         public void RequestTouchKeyboard(uint owner, ReadOnlySpan<char> text, ImTouchKeyboardSettings settings)
         {
@@ -53,12 +91,25 @@ namespace Imui.IO.Touch
                     GetType(settings.Type),
                     false,
                     settings.Muiltiline);
+
                 TouchKeyboard.characterLimit = settings.CharactersLimit;
+                TouchKeyboard.selection = settings.Selection;
             }
 
             if (!TouchKeyboard.active)
             {
                 TouchKeyboard.active = true;
+            }
+
+            if (NativeInputFieldHidden && TouchKeyboard.active && TouchKeyboard.canSetSelection)
+            {
+                var prev = TouchKeyboard.selection;
+                var changed = prev.start != settings.Selection.start || prev.length != settings.Selection.length;
+                if (changed)
+                {
+                    // (artem-s): setting selection does allocate currently edited string for range checking
+                    TouchKeyboard.selection = settings.Selection;
+                }
             }
 
             touchKeyboardRequestFrame = Time.frameCount;
@@ -69,7 +120,7 @@ namespace Imui.IO.Touch
             switch (type)
             {
                 case ImTouchKeyboardType.Numeric:
-                    return TouchScreenKeyboardType.DecimalPad;
+                    return TouchScreenKeyboardType.NumbersAndPunctuation;
                 default:
                     return TouchScreenKeyboardType.Default;
             }
@@ -77,6 +128,9 @@ namespace Imui.IO.Touch
 
         public void HandleTouchKeyboard(out ImTextEvent textEvent)
         {
+            var textDirty = textInputDirty;
+            
+            textInputDirty = false;
             textEvent = default;
 
             if (TouchKeyboard != null)
@@ -85,6 +139,20 @@ namespace Imui.IO.Touch
 
                 switch (TouchKeyboard.status)
                 {
+                    case TouchScreenKeyboard.Status.Visible when NativeInputFieldHidden:
+                        var sendEvent = textDirty;
+#if !ENABLE_INPUT_SYSTEM
+                        sendEvent |= Input.inputString?.Length > 0;
+#endif
+
+                        if (sendEvent)
+                        {
+                            var text = TouchKeyboard.text;
+                            // TODO (artem-s): would be nice to update selection even when text itself hasn't changed
+                            RangeInt? selection = TouchKeyboard.canGetSelection ? TouchKeyboard.selection : null;
+                            textEvent = new ImTextEvent(ImTextEventType.Set, text, selection);
+                        }
+                        break;
                     case TouchScreenKeyboard.Status.Canceled:
                         textEvent = new ImTextEvent(ImTextEventType.Cancel);
                         shouldHide = true;
@@ -105,6 +173,13 @@ namespace Imui.IO.Touch
 
         public void Dispose()
         {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                Keyboard.current.onIMECompositionChange -= OnTextInput;
+            }
+#endif
+
             if (TouchKeyboard != null)
             {
                 TouchKeyboard.active = false;

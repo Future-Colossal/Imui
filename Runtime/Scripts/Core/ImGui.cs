@@ -22,12 +22,12 @@ namespace Imui.Core
         ShadedWireframe = 2
     }
 
-    public unsafe class ImGui: IDisposable
+    public unsafe class ImGui: IDisposable, IImuiRenderDelegate
     {
         private const int CONTROL_IDS_STACK_CAPACITY = 32;
 
         private const int INIT_MESHES_COUNT = 1024 / 2;
-        private const int INIT_VERTICES_COUNT = 1024 * 16;
+        private const int INIT_VERTICES_COUNT = 1024 * 32;
         private const int INIT_INDICES_COUNT = INIT_VERTICES_COUNT * 3;
 
         private const int FLOATING_CONTROLS_CAPACITY = 128;
@@ -136,7 +136,6 @@ namespace Imui.Core
         internal FrameData frameData;
         // ReSharper restore InconsistentNaming
 
-        private readonly ImuiRenderDelegate _renderDelegate;
         private ImDynamicArray<ControlId> idsStack;
         private ImDynamicArray<bool> readOnlyStack;
         private uint activeControl;
@@ -169,7 +168,6 @@ namespace Imui.Core
             readOnlyStack = new ImDynamicArray<bool>(READONLY_STACK_CAPACITY);
             controlScopesStack = new ImDynamicArray<ImControlScope>(CONTROL_SCOPE_STACK_CAPACITY);
             styleStack = new ImDynamicArray<StyleProp>(STYLE_SCOPE_STACK_CAPACITY);
-            _renderDelegate = Render;
 
             Input.UseRaycaster(Raycast);
             SetTheme(ImThemeBuiltin.Light());
@@ -253,16 +251,20 @@ namespace Imui.Core
 
         public void LoadDefaultFont()
         {
-            TextDrawer.LoadFont(Resources.Load<Font>("Imui/FiraMono-Regular"));
-        }
+            var font = Resources.Load<Font>("Imui/FiraMono-Regular");
+            var size = font.fontSize;
+            var mode = ImGlyphRenderMode.Sdf;
 
+            TextDrawer.LoadFont(font, size, mode);
+        }
+        
         public void BeginReadOnly(bool isReadOnly)
         {
             readOnlyStack.Push(isReadOnly);
 
             if (isReadOnly)
             {
-                Canvas.PushInvColorMul(1 - Style.Theme.ReadOnlyColorMultiplier);
+                Canvas.PushInvColorMul(1 - Style.Global.ReadOnlyModifier);
             }
             else
             {
@@ -414,7 +416,7 @@ namespace Imui.Core
 
         public bool IsControlActive(uint controlId)
         {
-            return activeControl == controlId;
+            return controlId != default && activeControl == controlId;
         }
 
         public bool IsControlHovered(uint controlId)
@@ -435,9 +437,9 @@ namespace Imui.Core
             return false;
         }
 
-        public void SetTheme(ImTheme theme)
+        public void SetTheme(in ImTheme theme)
         {
-            Style = ImStyleSheetBuilder.Build(theme);
+            Style = ImStyleSheetBuilder.BuildStyleSheet(in theme);
         }
 
         public void RegisterRaycastTarget(ImRect rect)
@@ -646,10 +648,10 @@ namespace Imui.Core
 
         public void Render()
         {
-            Renderer.Schedule(_renderDelegate);
+            Renderer.Schedule(this);
         }
         
-        private void Render(IImuiRenderingContext context)
+        void IImuiRenderDelegate.Render(IImuiRenderingContext context)
         {
             ImProfiler.BeginSample("ImGui.Render");
 
@@ -660,7 +662,7 @@ namespace Imui.Core
             var renderCmd = context.CreateCommandBuffer();
             var screenSize = Renderer.GetScreenSize();
             var uiScale = Renderer.GetScale();
-            var targetSize = Renderer.SetupRenderTarget(renderCmd, Canvas.NeedsDepth);
+            var targetSize = Renderer.SetupRenderTarget(renderCmd);
 
             if (RenderMode is ImGuiRenderMode.Shaded or ImGuiRenderMode.ShadedWireframe)
             {
@@ -718,3 +720,4 @@ namespace Imui.Core
         }
     }
 }
+

@@ -1,10 +1,11 @@
+using System;
 using Color = UnityEngine.Color;
 using Color32 = UnityEngine.Color32;
 
 namespace Imui.Style
 {
-    [System.Serializable]
-    public struct ImTheme : System.IEquatable<ImTheme>
+    [Serializable]
+    public struct ImTheme : IEquatable<ImTheme>
     {
         public float TextSize;
         public float Spacing;
@@ -22,44 +23,38 @@ namespace Imui.Style
         public Color Foreground;
         public Color Control;
         public Color Accent;
-        public float Variance;
+        public float Contrast;
+        public float BorderContrast;
 
-        #region Equality
-        public bool Equals(ImTheme other) => Equals(this, in other);
-        public override bool Equals(object obj) => obj is ImTheme other && Equals(this, other);
-        public static bool operator ==(in ImTheme left, in ImTheme right) => Equals(left, right);
-        public static bool operator !=(in ImTheme left, in ImTheme right) => !Equals(left, right);
-
-        /// <summary>
-        /// This method exists to allow equality operations to proceed without copying this massive struct every time
-        /// </summary>
-        /// <returns>True if both are equal</returns>
-        /// <remarks>Should this just be a GetHashCode call?</remarks>
-        [System.Diagnostics.Contracts.Pure]
-        private static bool Equals(in ImTheme first, in ImTheme second)
+        public bool Equals(ImTheme other)
         {
-            return first.TextSize.Equals(second.TextSize) && 
-                   first.Spacing.Equals(second.Spacing) &&
-                   first.InnerSpacing.Equals(second.InnerSpacing) && 
-                   first.Indent.Equals(second.Indent) &&
-                   first.ExtraRowHeight.Equals(second.ExtraRowHeight) &&
-                   first.ScrollBarSize.Equals(second.ScrollBarSize) &&
-                   first.WindowBorderRadius.Equals(second.WindowBorderRadius) &&
-                   first.WindowBorderThickness.Equals(second.WindowBorderThickness) &&
-                   first.BorderRadius.Equals(second.BorderRadius) &&
-                   first.BorderThickness.Equals(second.BorderThickness) &&
-                   first.ReadOnlyColorMultiplier.Equals(second.ReadOnlyColorMultiplier) &&
-                   first.Background.Equals(second.Background) && 
-                   first.Foreground.Equals(second.Foreground) &&
-                   first.Control.Equals(second.Control) && 
-                   first.Accent.Equals(second.Accent) &&
-                   first.Variance.Equals(second.Variance);
+            return TextSize.Equals(other.TextSize) &&
+                   Spacing.Equals(other.Spacing) &&
+                   InnerSpacing.Equals(other.InnerSpacing) &&
+                   Indent.Equals(other.Indent) &&
+                   ExtraRowHeight.Equals(other.ExtraRowHeight) &&
+                   ScrollBarSize.Equals(other.ScrollBarSize) &&
+                   WindowBorderRadius.Equals(other.WindowBorderRadius) &&
+                   WindowBorderThickness.Equals(other.WindowBorderThickness) &&
+                   BorderRadius.Equals(other.BorderRadius) &&
+                   BorderThickness.Equals(other.BorderThickness) &&
+                   ReadOnlyColorMultiplier.Equals(other.ReadOnlyColorMultiplier) &&
+                   Background.Equals(other.Background) &&
+                   Foreground.Equals(other.Foreground) &&
+                   Control.Equals(other.Control) &&
+                   Accent.Equals(other.Accent) &&
+                   Contrast.Equals(other.Contrast) &&
+                   BorderContrast.Equals(other.BorderContrast);
         }
 
+        public override bool Equals(object obj)
+        {
+            return obj is ImTheme other && Equals(other);
+        }
 
         public override int GetHashCode()
         {
-            var hashCode = new System.HashCode();
+            var hashCode = new HashCode();
             hashCode.Add(TextSize);
             hashCode.Add(Spacing);
             hashCode.Add(InnerSpacing);
@@ -75,22 +70,87 @@ namespace Imui.Style
             hashCode.Add(Foreground);
             hashCode.Add(Control);
             hashCode.Add(Accent);
-            hashCode.Add(Variance);
+            hashCode.Add(Contrast);
+            hashCode.Add(BorderContrast);
             return hashCode.ToHashCode();
         }
 
-        #endregion Equality
+        public static bool operator ==(ImTheme left, ImTheme right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ImTheme left, ImTheme right)
+        {
+            return !left.Equals(right);
+        }
+    }
+    
+    public struct ImThemePalette
+    {
+        public bool IsDark;
+
+        public Color Back;
+        public Color Front;
+        public Color Control;
+
+        public Color Accent;
+        public Color AccentFront;
     }
 
     public static class ImThemeBuiltin
     {
-        public static ImTheme LightTouch() => Light().EnlargedForTouch();
-
-        public static ImTheme DarkTouch() => Dark().EnlargedForTouch();
+        public static ImTheme Wire()
+        {
+            return new ImTheme()
+            {
+                TextSize = 20f,
+                Spacing = 3.25f,
+                InnerSpacing = 5f,
+                Indent = 12f,
+                ExtraRowHeight = 4f,
+                ScrollBarSize = 13f,
+                WindowBorderRadius = 8f,
+                WindowBorderThickness = 1f,
+                BorderRadius = 5f,
+                BorderThickness = 1f,
+                ReadOnlyColorMultiplier = 0.9f,
+                Background = new Color32(255, 255, 255, 255),
+                Foreground = new Color32(30, 30, 30, 255),
+                Accent = new Color32(194, 230, 255, 255),
+                Control = new Color32(255, 255, 255, 255),
+                Contrast = 0f,
+                BorderContrast = 2f
+            };
+        }
         
+        public static ImTheme LightTouch()
+        {
+            var theme = Light();
+
+            theme.TextSize = 23f;
+            theme.Spacing = 5f;
+            theme.InnerSpacing = 6.5f;
+            theme.ExtraRowHeight = 11f;
+
+            return theme;
+        }
+        
+        public static ImTheme DarkTouch()
+        {
+            var theme = Dark();
+
+            theme.TextSize = 23f;
+            theme.Spacing = 5f;
+            theme.InnerSpacing = 6.5f;
+            theme.ExtraRowHeight = 11f;
+
+            return theme;
+        }
+
         public static ImTheme Light()
         {
-            return new ImTheme
+            return new ImTheme()
             {
                 TextSize = 20f,
                 Spacing = 3f,
@@ -103,11 +163,12 @@ namespace Imui.Style
                 BorderRadius = 5f,
                 BorderThickness = 1f,
                 ReadOnlyColorMultiplier = 0.9f,
-                Background = new Color32(241, 241, 241, 255),
+                Background = new Color32(238, 238, 238, 255),
                 Foreground = new Color32(30, 30, 30, 255),
-                Accent = new Color32(0, 120, 202, 255),
-                Control = new Color32(0, 0, 0, 0),
-                Variance = 0.05f
+                Accent = new Color32(0, 144, 242, 255),
+                Control = new Color32(221, 221, 221, 255),
+                Contrast = -0.03f,
+                BorderContrast = 0.17f
             };
         }
 
@@ -126,11 +187,12 @@ namespace Imui.Style
                 BorderRadius = 5f,
                 BorderThickness = 1f,
                 ReadOnlyColorMultiplier = 0.7f,
-                Background = new Color32(58, 58, 58, 255),
+                Background = new Color32(49, 49, 49, 255),
                 Foreground = new Color32(224, 224, 224, 255),
-                Accent = new Color32(0, 125, 219, 255),
-                Control = new Color32(255, 255, 255, 8),
-                Variance = 0.18f,
+                Accent = new Color32(17, 121, 200, 255),
+                Control = new Color32(79, 79, 79, 255),
+                Contrast = 0f,
+                BorderContrast = -0.04f
             };
         }
 
@@ -153,7 +215,6 @@ namespace Imui.Style
                 Foreground = new Color32(255, 255, 255, 255),
                 Accent = new Color32(89, 148, 243, 255),
                 Control = new Color32(75, 114, 200, 118),
-                Variance = 0.2f,
             };
         }
 
@@ -176,7 +237,6 @@ namespace Imui.Style
                 Foreground = new Color32(224, 224, 224, 255),
                 Accent = new Color32(211, 85, 12, 255),
                 Control = new Color32(0, 121, 255, 11),
-                Variance = 0.22f,
             };
         }
 
@@ -198,8 +258,9 @@ namespace Imui.Style
                 Background = new Color32(0, 0, 0, 240),
                 Foreground = new Color32(18, 255, 0, 255),
                 Accent = new Color32(52, 224, 0, 255),
-                Control = new Color32(22, 78, 0, 255),
-                Variance = 0.2f,
+                Control = new Color32(0, 95, 3, 255),
+                Contrast = 0f,
+                BorderContrast = 0f
             };
         }
         

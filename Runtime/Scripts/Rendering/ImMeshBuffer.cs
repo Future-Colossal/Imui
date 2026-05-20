@@ -145,8 +145,7 @@ namespace Imui.Rendering
             {
                 var v = Vertices[i];
                 if (float.IsNaN(v.Position.x) || float.IsInfinity(v.Position.x) ||
-                    float.IsNaN(v.Position.y) || float.IsInfinity(v.Position.y) ||
-                    float.IsNaN(v.Position.z) || float.IsInfinity(v.Position.z))
+                    float.IsNaN(v.Position.y) || float.IsInfinity(v.Position.y))
                 {
                     ImAssert.IsTrue(false, "Invalid vertex position, some of the components is either NaN of Infinity");
                 }

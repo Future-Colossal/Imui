@@ -13,6 +13,9 @@ namespace Imui.Controls
             return new Vector2(Mathf.Max(vec.x, x), Mathf.Max(vec.y, y));
         }
 
+        public static void SplitHorizontal(this ImRect rect, ref Span<ImRect> output, float spacing) =>
+            SplitHorizontal(rect, ref output, output.Length, spacing);
+
         public static void SplitHorizontal(this ImRect rect, ref Span<ImRect> output, int columns, float spacing)
         {
             if (columns <= 0)
@@ -42,6 +45,16 @@ namespace Imui.Controls
             bottom.H = rect.H - height;
             rect.Y += bottom.H;
             rect.H = height;
+            return rect;
+        }
+        
+        public static ImRect TakeTop(this ImRect rect, float height, float space, out ImRect bottom)
+        {
+            bottom = rect;
+            bottom.H = rect.H - height;
+            rect.Y += bottom.H;
+            rect.H = height;
+            bottom.H -= space;
             return rect;
         }
 

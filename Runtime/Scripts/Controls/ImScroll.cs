@@ -14,7 +14,8 @@ namespace Imui.Controls
         HideHorBar = 1 << 1,
         PersistentHorBar = 1 << 2,
         PersistentVerBar = 1 << 3,
-        DisableInertia = 1 << 4
+        DisableInertia = 1 << 4,
+        HideAll = HideVerBar | HideHorBar
     }
 
     [Flags]
@@ -34,6 +35,8 @@ namespace Imui.Controls
         public Vector2 Velocity;
         public ImScrollStateFlag State;
         public ImScrollFlag Flags;
+        public uint VerticalBarId;
+        public uint HorizontalBarId;
     }
 
     public static class ImScroll
@@ -50,7 +53,13 @@ namespace Imui.Controls
             var visibleRect = GetVisibleRect(gui, frame.Bounds, state);
 
             gui.Layout.Push(frame.Axis, visibleRect, ImLayoutFlag.None);
-            gui.Layout.SetOffset(state.Offset);
+            
+            // (artem-s): fixes flickering on lines and glyphs by snapping to pixel grid
+            var roundedOffset = state.Offset;
+            roundedOffset.x = Mathf.Round(roundedOffset.x * gui.Canvas.ScreenScale) / gui.Canvas.ScreenScale;
+            roundedOffset.y = Mathf.Round(roundedOffset.y * gui.Canvas.ScreenScale) / gui.Canvas.ScreenScale;
+            
+            gui.Layout.SetOffset(roundedOffset);
         }
 
         public static void EndScrollable(this ImGui gui, ImScrollFlag flags = ImScrollFlag.None)
@@ -77,6 +86,13 @@ namespace Imui.Controls
             state.Offset = offset;
         }
 
+        public static bool IsScrolling(this ImGui gui)
+        { 
+            ref readonly var state = ref gui.GetCurrentScope<ImScrollState>(out var id);
+
+            return gui.IsControlActive(id) || gui.IsControlActive(state.HorizontalBarId) || gui.IsControlActive(state.VerticalBarId);
+        }
+
         public static void Scroll(ImGui gui, uint id, ref ImScrollState state, ImRect view, Vector2 size)
         {
             const ImScrollStateFlag ANY_AXES_SCROLLABLE = ImScrollStateFlag.HorScrollable | ImScrollStateFlag.VerScrollable;
@@ -86,8 +102,8 @@ namespace Imui.Controls
             var dx = 0f;
             var dy = 0f;
 
-            var horId = gui.GetNextControlId();
-            var verId = gui.GetNextControlId();
+            state.HorizontalBarId = gui.GetNextControlId();
+            state.VerticalBarId = gui.GetNextControlId();
 
             size.x += adjust.x;
             size.y += adjust.y;
@@ -97,7 +113,7 @@ namespace Imui.Controls
                 var rect = GetVerticalBarRect(gui, view);
                 var normalSize = view.H / size.y;
                 var normalPosition = state.Offset.y / (size.y - view.H);
-                var normalDelta = Bar(verId, gui, rect, normalSize, normalPosition, 1);
+                var normalDelta = Bar(state.VerticalBarId, gui, rect, normalSize, normalPosition, 1);
                 if (normalDelta != 0)
                 {
                     state.State |= ImScrollStateFlag.ConventionalScroll;
@@ -111,7 +127,7 @@ namespace Imui.Controls
                 var rect = GetHorizontalBarRect(gui, view, (state.State & ImScrollStateFlag.VerBarVisible) != 0);
                 var normalSize = view.W / size.x;
                 var normalPosition = (state.Offset.x / (size.x - view.W));
-                var normalDelta = Bar(horId, gui, rect, normalSize, -normalPosition, 0);
+                var normalDelta = Bar(state.HorizontalBarId, gui, rect, normalSize, -normalPosition, 0);
                 if (normalDelta != 0)
                 {
                     state.State |= ImScrollStateFlag.ConventionalScroll;
@@ -143,7 +159,8 @@ namespace Imui.Controls
             switch (evt.Type)
             {
                 case ImMouseEventType.Scroll when groupHovered:
-                    var factor = gui.Style.Layout.TextSize;
+                    var factor = 0.5f * gui.TextDrawer.GetLineHeightFromFontSize(gui.Style.Layout.TextSize);
+                    state.Velocity = default;
                     state.State |= ImScrollStateFlag.ConventionalScroll;
                     dx += evt.Delta.x * factor;
                     dy += evt.Delta.y * factor;
@@ -205,11 +222,11 @@ namespace Imui.Controls
         {
             if (active)
             {
-                velocity = Vector2.Lerp(velocity, currentOffset - prevOffset, Time.deltaTime * VELOCITY_SHARPNESS);
+                velocity = Vector2.Lerp(velocity, currentOffset - prevOffset, Time.unscaledDeltaTime * VELOCITY_SHARPNESS);
             }
             else
             {
-                velocity *= Mathf.Pow(DECELERATION_RATE, Time.deltaTime);
+                velocity *= Mathf.Pow(DECELERATION_RATE, Time.unscaledDeltaTime);
             }
         }
         
@@ -226,20 +243,21 @@ namespace Imui.Controls
 
             var delta = 0f;
             var absoluteSize = axis == 0 ? rect.W : rect.H;
-            var minSize = (axis == 0 ? rect.H : rect.W) - style.BorderThickness;
+            var minSize = ((axis == 0 ? rect.H : rect.W) - style.BorderThickness) * gui.Style.Scroll.MinHandleAspect;
             var size = Mathf.Max(minSize, Mathf.Clamp01(normalSize) * absoluteSize);
             var position = Mathf.Clamp01(normalPosition) * (absoluteSize - size);
 
+            var handlePadding = style.BorderThickness + style.HandlePadding;
             var handleRect = axis == 0
                 ? new ImRect(rect.X + position, rect.Y, size, rect.H)
                 : new ImRect(rect.X, rect.Y + (rect.H - size) - position, rect.W, size);
-            handleRect = handleRect.WithPadding(style.BorderThickness);
+            handleRect = handleRect.WithPadding(handlePadding);
 
             var hovered = gui.IsControlHovered(id);
             var pressed = gui.IsControlActive(id);
 
             var barStyle = pressed ? style.PressedState : hovered ? style.HoveredState : style.NormalState;
-            gui.Canvas.Rect(rect, barStyle.BackColor, style.BorderRadius);
+            gui.Canvas.RectWithOutline(rect, barStyle.BackColor, barStyle.BorderColor, style.BorderThickness, style.BorderRadius);
             gui.Canvas.Rect(handleRect, barStyle.FrontColor, Mathf.Max(0, style.BorderRadius - style.BorderThickness));
 
             ref readonly var evt = ref gui.Input.MouseEvent;

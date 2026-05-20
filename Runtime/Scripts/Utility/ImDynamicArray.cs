@@ -107,6 +107,11 @@ namespace Imui.Utility
 
             Count = 0;
         }
+        
+        public static implicit operator ReadOnlySpan<T>(ImDynamicArray<T> array)
+        {
+            return ((ReadOnlySpan<T>)array.Array)[..array.Count];
+        }
 
         private void EnsureCapacity(int count)
         {

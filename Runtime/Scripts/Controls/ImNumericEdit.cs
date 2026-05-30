@@ -611,6 +611,9 @@ namespace Imui.Controls
                                                 bottom: halfVertPadding);
 
                 gui.Canvas.RectWithOutline(rect, style.BackColor, style.BorderColor, style.BorderThickness, style.BorderRadius);
+                
+                DrawNumericEditSliderFill(gui, value.AsDouble(), rect, min.AsDouble(), max.AsDouble(), style);
+                
                 gui.Canvas.Text(textBuffer,
                                 style.FrontColor,
                                 textRect,
@@ -689,6 +692,31 @@ namespace Imui.Controls
             }
 
             return changed;
+        }
+
+        private static void DrawNumericEditSliderFill(ImGui gui, double value, ImRect rect, double min,
+            double max, ImStyleBox style)
+        {
+            var range = max - min;
+            if (!double.IsFinite(range) || Math.Abs(range) is <= float.Epsilon or >= int.MaxValue)
+            {
+                return;
+            }
+            
+            var fillColor = gui.Style.Slider.Fill.BackColor;
+            if (fillColor.a > 1)
+            {
+                fillColor.a >>= 1; // halve alpha
+            }
+
+            var normValue = Math.Clamp((value - min) / range, 0, 1);
+            var fillRect = rect.TakeLeft((float)(normValue * rect.W));
+            gui.Canvas.RectWithOutline(
+                rect:fillRect,
+                color: fillColor,
+                outlineColor: style.BorderColor,
+                thickness: style.BorderThickness,
+                radius: style.BorderRadius);
         }
 
         private static void HandleDrag(in ImMouseEvent evt, ref double delta, double step, double min, double max, in ImRect rect)

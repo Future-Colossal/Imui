@@ -537,7 +537,7 @@ namespace Imui.Controls
             var hovered = gui.IsControlHovered(id);
             var active = gui.IsControlActive(id);
             var useSlider = (flags & ImNumericEditFlag.Slider) != 0;
-            var usePlusMinusButtons = !useSlider && (flags & ImNumericEditFlag.PlusMinus) != 0;
+            var usePlusMinusButtons = (flags & ImNumericEditFlag.PlusMinus) != 0;
 
             ref readonly var evt = ref gui.Input.MouseEvent;
 
@@ -554,7 +554,9 @@ namespace Imui.Controls
             {
                 plusId = gui.GetNextControlId();
                 minusId = gui.GetNextControlId();
-                plusMinusRect = rect.TakeRight(rect.H * 2);
+                var plusMinusWidth = rect.H * 2;
+                plusMinusRect = rect.TakeRight(plusMinusWidth);
+                rect = rect.TakeLeft(rect.W - plusMinusWidth);
                 plusMinusRect.X += gui.Style.Global.EmbeddedButtonPadding;
                 plusMinusRect.W -= gui.Style.Global.EmbeddedButtonPadding;
             }

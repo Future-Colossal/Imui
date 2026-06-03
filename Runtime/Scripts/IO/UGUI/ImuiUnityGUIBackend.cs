@@ -387,7 +387,7 @@ namespace Imui.IO.UGUI
             
             var device = GetDeviceType(eventData);
             var delta = ImUnityScrollUtility.ProcessScrollDelta(dx, dy);
-            mouseEventsQueue.PushFront(new ImMouseEvent(ImMouseEventType.Scroll, (int)eventData.button, EventModifiers.None, delta, device));
+            mouseEventsQueue.PushFront(new ImMouseEvent(ImMouseEventType.Scroll, (int)eventData.button, GetMouseEventModifiers(), delta, device));
         }
 
         private EventModifiers GetMouseEventModifiers()
